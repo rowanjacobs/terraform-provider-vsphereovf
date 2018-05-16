@@ -21,7 +21,7 @@ func NewFinder(client *govmomi.Client, dcPath string) (Finder, error) {
 	finder := Finder{find.NewFinder(client.Client, false)}
 	dc, err := finder.Datacenter(dcPath)
 	if err != nil {
-		return Finder{}, err
+		return Finder{}, fmt.Errorf("error retrieving datacenter '%s': %s", dcPath, err)
 	}
 
 	finder.SetDatacenter(dc)

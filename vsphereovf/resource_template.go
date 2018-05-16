@@ -1,6 +1,7 @@
 package vsphereovf
 
 import (
+	"fmt"
 	"io/ioutil"
 	"path/filepath"
 
@@ -84,7 +85,7 @@ func CreateTemplate(d *schema.ResourceData, m interface{}) error {
 	i := importer.NewImporterFromClient(client, finder, importer.ResourcePoolImpl{resourcePool}, datastore)
 	importSpec, err := i.CreateImportSpec(string(ovfContents), d.Get("network_mappings").(map[string]interface{}))
 	if err != nil {
-		return err
+		return fmt.Errorf("error creating import spec: %s", err)
 	}
 
 	return i.Import(importSpec, folder, filepath.Dir(ovfPath))
