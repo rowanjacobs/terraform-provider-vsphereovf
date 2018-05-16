@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/vmware/govmomi/nfc"
 	"github.com/vmware/govmomi/vim25/soap"
@@ -12,26 +13,54 @@ import (
 )
 
 type Lease struct {
-	nfcLease NFCLease
+	ItemUpload
+	NFCLease NFCLease
 }
 
 func NewLease(nfcLease NFCLease) Lease {
-	return Lease{nfcLease: nfcLease}
+	return Lease{itemUploadImpl{nfcLease}, nfcLease}
 }
 
 //go:generate counterfeiter . NFCLease
 type NFCLease interface {
 	Upload(context.Context, nfc.FileItem, io.Reader, soap.Upload) error
 	Wait(context.Context, []types.OvfFileItem) (*nfc.LeaseInfo, error)
+	StartUpdater(context.Context, *nfc.LeaseInfo) *nfc.LeaseUpdater
+	Complete(context.Context) error
 }
 
-//go:generate counterfeiter . ResourcePool
-// type ResourcePool interface {
-// 	ImportVApp(context.Context, types.BaseImportSpec, *object.Folder, *object.HostSystem) (NFCLease, error)
-// }
+func (l Lease) UploadAll(fileItems []types.OvfFileItem, dir string) error {
+	ctx := context.Background()
+	leaseInfo, err := l.NFCLease.Wait(ctx, fileItems)
+	if err != nil {
+		return err
+	}
 
-func (l Lease) Upload(item nfc.FileItem, path string) error {
-	file, err := os.Open(path)
+	updater := l.NFCLease.StartUpdater(ctx, leaseInfo)
+	defer updater.Done()
+
+	for _, i := range leaseInfo.Items {
+		err := l.Upload(i, filepath.Join(dir, i.Path))
+		if err != nil {
+			return err
+		}
+	}
+
+	return l.NFCLease.Complete(ctx)
+}
+
+//go:generate counterfeiter . ItemUpload
+type ItemUpload interface {
+	Upload(nfc.FileItem, string) error
+}
+
+type itemUploadImpl struct {
+	nfcLease NFCLease
+}
+
+// TODO: maybe this could be private? it needs an open lease...
+func (i itemUploadImpl) Upload(item nfc.FileItem, fullPath string) error {
+	file, err := os.Open(fullPath)
 	if err != nil {
 		return err
 	}
@@ -42,14 +71,10 @@ func (l Lease) Upload(item nfc.FileItem, path string) error {
 		return err
 	}
 
-	err = l.nfcLease.Upload(context.Background(), item, file, soap.Upload{ContentLength: fileInfo.Size()})
+	err = i.nfcLease.Upload(context.Background(), item, file, soap.Upload{ContentLength: fileInfo.Size()})
 	if err != nil {
 		return fmt.Errorf("Lease upload: %s", err)
 	}
 
 	return nil
 }
-
-// func (l Lease) Import(spec *types.OvfCreateImportSpecResult, folder *object.Folder) ([]nfc.FileItem, error) {
-// 	return []nfc.FileItem{}, nil
-// }

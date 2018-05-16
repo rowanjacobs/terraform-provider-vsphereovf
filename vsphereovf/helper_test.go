@@ -2,6 +2,7 @@ package vsphereovf_test
 
 import (
 	"context"
+	"os"
 
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -39,19 +40,19 @@ func ginkgoTestWrapper() resource.TestT {
 }
 
 // precheck for tests requiring actual infrastructure creds
-// func acceptanceTestPreCheck(t *testing.T) {
-// if v := os.Getenv("VSPHERE_USER"); v == "" {
-// 	t.Fatal("VSPHERE_USER must be set for acceptance tests")
-// }
+func acceptanceTestPreCheck(t resource.TestT) {
+	if v := os.Getenv("VSPHERE_USER"); v == "" {
+		t.Fatal("VSPHERE_USER must be set for acceptance tests")
+	}
 
-// if v := os.Getenv("VSPHERE_PASSWORD"); v == "" {
-// 	t.Fatal("VSPHERE_PASSWORD must be set for acceptance tests")
-// }
+	if v := os.Getenv("VSPHERE_PASSWORD"); v == "" {
+		t.Fatal("VSPHERE_PASSWORD must be set for acceptance tests")
+	}
 
-// if v := os.Getenv("VSPHERE_SERVER"); v == "" {
-// 	t.Fatal("VSPHERE_SERVER must be set for acceptance tests")
-// }
-// }
+	if v := os.Getenv("VSPHERE_SERVER"); v == "" {
+		t.Fatal("VSPHERE_SERVER must be set for acceptance tests")
+	}
+}
 
 // utility methods to get vSphere clients and make vSphere client API calls
 func getClient() *govmomi.Client {
@@ -61,7 +62,7 @@ func getClient() *govmomi.Client {
 func getTemplate(s *terraform.State, templatePath string) (*object.VirtualMachine, error) {
 	finder := find.NewFinder(getClient().Client, false)
 
-	// TODO: eventually let users select a datacenter that isn't default
+	// TODO: let users select a datacenter that isn't default
 	dc, err := finder.DefaultDatacenter(context.Background())
 	if err != nil {
 		return nil, err

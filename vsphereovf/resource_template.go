@@ -1,17 +1,13 @@
 package vsphereovf
 
 import (
-	"bytes"
-	"context"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 
-	"github.com/coreos/etcd/client"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/vmware/govmomi/ovf"
-	"github.com/vmware/govmomi/vim25/soap"
-	"github.com/vmware/govmomi/vim25/types"
+	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/internal/importer"
+	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/internal/search"
+	"github.com/vmware/govmomi"
 )
 
 func TemplateResource() *schema.Resource {
@@ -29,6 +25,26 @@ func TemplateResource() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+			"network_mappings": &schema.Schema{
+				Type:     schema.TypeMap,
+				Optional: true,
+			},
+			"datacenter": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"resource_pool": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"datastore": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"folder": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
 		},
 	}
 }
@@ -37,47 +53,41 @@ func CreateTemplate(d *schema.ResourceData, m interface{}) error {
 	// Set the ID of the Terraform resource.
 	// (Currently we just set the ID to the template name.)
 	// TODO: (Path/name might be a better option for this.)
-	name := d.Get("name").(string)
-	d.SetId(name)
+	d.SetId(d.Get("name").(string))
+	// stuff above this comment is unit tested
 
-	ctx := context.TODO()
-	// read and unmarshal the OVF file into an OVF envelope
-	contents, err := ioutil.ReadFile(ovfPath)
-	envelope, err := ovf.Unmarshal(bytes.NewReader(contents))
+	// TODO: find a way to unit test the rest of this function.
+	ovfPath, err := filepath.Abs(d.Get("path").(string))
+	ovfContents, err := ioutil.ReadFile(ovfPath)
 
-	// represent the OVF envelope's network mappings as a map[string]string
-	for _, net := range envelope.Network.Networks {
-		networks[net.Name] = net.Name
+	client := m.(*govmomi.Client)
+	finder, err := search.NewFinder(client, d.Get("datacenter").(string))
+	if err != nil {
+		return err
 	}
 
-	// make a CreateImportSpecParams, give it an empty network mapping
-	isp := types.OvfCreateImportSpecParams{NetworkMapping: []types.OvfNetworkMapping{}}
-
-	// populate the network mapping
-	for src, dst := range networks {
-		net, err := Network(client, dc, dst)
-		isp.NetworkMapping = append(isp.NetworkMapping, types.OvfNetworkMapping{Name: src, Network: net.Reference()})
+	resourcePool, err := finder.ResourcePool(d.Get("resource_pool").(string))
+	if err != nil {
+		return err
 	}
 
-	// create an ovf manager, use it to create an import spec out of our CreateImportSpecParams
-	manager := ovf.NewManager(client.Client)
-	importSpec, err := manager.CreateImportSpec(ctx, string(contents), resourcePool, dataStore, isp)
+	datastore, err := finder.Datastore(d.Get("datastore").(string))
+	if err != nil {
+		return err
+	}
 
-	// together, the following lines are a sort of blocking ImportVApp
-	// use our import spec to get an nfc lease from our resource pool
-	lease, err := resourcePool.ImportVApp(ctx, importSpec.ImportSpec, folder, nil)
-	// use our import spec to get lease info (including list of item URLs) out of the nfc lease
-	info, err := lease.Wait(ctx, importSpec.FileItem)
+	folder, err := finder.Folder(d.Get("folder").(string))
+	if err != nil {
+		return err
+	}
 
-	// read ovf file from local path
-	// might look like:
-	file, err := os.Open(filepath.Join(filepath.Dir(ovfPath), item.Path))
+	i := importer.NewImporterFromClient(client, finder, importer.ResourcePoolImpl{resourcePool}, datastore)
+	importSpec, err := i.CreateImportSpec(string(ovfContents), d.Get("network_mappings").(map[string]interface{}))
+	if err != nil {
+		return err
+	}
 
-	// use the nfc lease to upload the ovf file
-	// looks kinda like this:
-	err = lease.Upload(ctx, info.Items[0], file, soap.Upload{ContentLength: fileInfo.Size()})
-
-	return nil
+	return i.Import(importSpec, folder, filepath.Dir(ovfPath))
 }
 
 func resourceTemplateRead(d *schema.ResourceData, m interface{}) error   { return nil }

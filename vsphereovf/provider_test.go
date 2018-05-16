@@ -3,7 +3,6 @@ package vsphereovf_test
 import (
 	"context"
 	"net/url"
-	"os"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -16,14 +15,14 @@ import (
 )
 
 var _ = Describe("Provider", func() {
-	var provider *schema.Provider
+	var (
+		provider *schema.Provider
+	)
 
 	BeforeEach(func() {
 		var ok bool
 		provider, ok = vsphereovf.Provider().(*schema.Provider)
 		Expect(ok).To(BeTrue())
-
-		os.Clearenv()
 	})
 
 	AfterEach(func() {
@@ -47,9 +46,10 @@ var _ = Describe("Provider", func() {
 		)
 		BeforeEach(func() {
 			rawConfig, err := config.NewRawConfig(map[string]interface{}{
-				"user":           "some-user",
-				"password":       "some-password",
-				"vsphere_server": "vsphere.example.com",
+				"user":                 "some-user",
+				"password":             "some-password",
+				"vsphere_server":       "vsphere.example.com",
+				"allow_unverified_ssl": false,
 			})
 			Expect(err).NotTo(HaveOccurred())
 			resourceConfig = terraform.NewResourceConfig(rawConfig)

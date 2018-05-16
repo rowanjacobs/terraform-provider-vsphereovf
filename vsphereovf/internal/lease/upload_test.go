@@ -9,9 +9,10 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphere/internal/lease"
-	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphere/internal/lease/leasefakes"
+	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/internal/lease"
+	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/internal/lease/leasefakes"
 	"github.com/vmware/govmomi/nfc"
+	"github.com/vmware/govmomi/vim25/types"
 )
 
 var _ = Describe("Lease", func() {
@@ -70,22 +71,79 @@ var _ = Describe("Lease", func() {
 		})
 	})
 
-	// Describe("Import", func() {
-	// 	var fileItems []nfc.FileItem
-	// 	BeforeEach(func() {
-	// 		fileItems = []nfc.FileItem{
-	// 			nfc.FileItem{},
-	// 			nfc.FileItem{},
-	// 		}
-	// 		leaseInfo := nfc.LeaseInfo{
-	// 			Items: fileItems,
-	// 		}
+	Describe("UploadAll", func() {
+		var (
+			fileItems  []types.OvfFileItem
+			itemUpload *leasefakes.FakeItemUpload
+		)
+		BeforeEach(func() {
+			itemUpload = &leasefakes.FakeItemUpload{}
+			leece = lease.Lease{
+				ItemUpload: itemUpload,
+				NFCLease:   nfcLease,
+			}
+			fileItem1 := types.OvfFileItem{
+				Path: "first-path",
+				Size: 123,
+			}
+			fileItem2 := types.OvfFileItem{
+				Path: "second-path",
+				Size: 456,
+			}
+			fileItems = []types.OvfFileItem{fileItem1, fileItem2}
+			leaseInfo := nfc.LeaseInfo{
+				Items: []nfc.FileItem{
+					{
+						OvfFileItem: fileItem1,
+					},
+					{
+						OvfFileItem: fileItem2,
+					},
+				},
+			}
 
-	// 		nfcLease.WaitReturns(&leaseInfo, nil)
-	// 	})
+			nfcLease.WaitReturns(&leaseInfo, nil)
+		})
 
-	// 	It("delegates to nfc.Lease", func() {
-	// 		actualItems, err := leece.Import(spec, nil)
-	// 	})
-	// })
+		It("delegates to nfc.Lease", func() {
+			err := leece.UploadAll(fileItems, "some-dir")
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(nfcLease.WaitCallCount()).To(Equal(1))
+			_, actualFileItems := nfcLease.WaitArgsForCall(0)
+			Expect(actualFileItems).To(Equal(fileItems))
+
+			Expect(itemUpload.UploadCallCount()).To(Equal(2))
+
+			item1, path1 := itemUpload.UploadArgsForCall(0)
+			Expect(item1.OvfFileItem).To(Equal(fileItems[0]))
+			Expect(path1).To(Equal("some-dir/first-path"))
+
+			item2, path2 := itemUpload.UploadArgsForCall(1)
+			Expect(item2.OvfFileItem).To(Equal(fileItems[1]))
+			Expect(path2).To(Equal("some-dir/second-path"))
+		})
+
+		Context("when we fail to to wait on the lease", func() {
+			BeforeEach(func() {
+				nfcLease.WaitReturns(nil, errors.New("kiwi"))
+			})
+
+			It("errors", func() {
+				err := leece.UploadAll(fileItems, "some-dir")
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		Context("when we fail to upload an item", func() {
+			BeforeEach(func() {
+				itemUpload.UploadReturns(errors.New("kumquat"))
+			})
+
+			It("errors", func() {
+				err := leece.UploadAll(fileItems, "some-dir")
+				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
 })
