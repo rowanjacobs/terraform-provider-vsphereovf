@@ -3,7 +3,6 @@ package vsphereovf_test
 import (
 	"errors"
 	"regexp"
-	"testing"
 
 	. "github.com/onsi/ginkgo"
 
@@ -12,11 +11,11 @@ import (
 )
 
 var _ = Describe("OVF Template resource", func() {
-	PIt("creates a basic vSphere template", func() {
+	It("creates a basic vSphere template", func() {
 		t := ginkgoTestWrapper()
 		resource.Test(t, resource.TestCase{
 			PreCheck: func() {
-				acceptanceTestPreCheck(t.(*testing.T))
+				acceptanceTestPreCheck(t)
 			},
 			// CheckDestroy: checkIfTemplateExistsInVSphere(false),
 			Providers: acceptanceTestProviders,

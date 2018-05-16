@@ -62,33 +62,25 @@ func CreateTemplate(d *schema.ResourceData, m interface{}) error {
 	ovfContents, err := ioutil.ReadFile(ovfPath)
 
 	client := m.(*govmomi.Client)
-	finder, err := search.NewFinder(client, d.Get("datacenter").(string))
+	templateParentObjects, err := search.FetchParentObjects(
+		client,
+		d.Get("datacenter").(string),
+		d.Get("datastore").(string),
+		d.Get("folder").(string),
+		d.Get("resource_pool").(string),
+		d.Get("network_mappings").(map[string]interface{}),
+	)
 	if err != nil {
 		return err
 	}
 
-	resourcePool, err := finder.ResourcePool(d.Get("resource_pool").(string))
-	if err != nil {
-		return err
-	}
-
-	datastore, err := finder.Datastore(d.Get("datastore").(string))
-	if err != nil {
-		return err
-	}
-
-	folder, err := finder.Folder(d.Get("folder").(string))
-	if err != nil {
-		return err
-	}
-
-	i := importer.NewImporterFromClient(client, finder, importer.ResourcePoolImpl{resourcePool}, datastore)
-	importSpec, err := i.CreateImportSpec(string(ovfContents), d.Get("network_mappings").(map[string]interface{}))
+	i := importer.NewImporterFromClient(client, importer.ResourcePoolImpl{templateParentObjects.ResourcePool}, templateParentObjects.Datastore)
+	importSpec, err := i.CreateImportSpec(string(ovfContents), templateParentObjects.Networks)
 	if err != nil {
 		return fmt.Errorf("error creating import spec: %s", err)
 	}
 
-	return i.Import(importSpec, folder, filepath.Dir(ovfPath))
+	return i.Import(importSpec, templateParentObjects.Folder, filepath.Dir(ovfPath))
 }
 
 func resourceTemplateRead(d *schema.ResourceData, m interface{}) error   { return nil }

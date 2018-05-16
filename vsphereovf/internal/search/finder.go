@@ -8,29 +8,28 @@ import (
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/find"
 	"github.com/vmware/govmomi/object"
-	"github.com/vmware/govmomi/vim25/types"
 )
-
-type Finder struct {
-	*find.Finder
-}
 
 const DefaultAPITimeout = 5 * time.Minute
 
-func NewFinder(client *govmomi.Client, dcPath string) (Finder, error) {
-	finder := Finder{find.NewFinder(client.Client, false)}
-	dc, err := finder.Datacenter(dcPath)
+type finder struct {
+	*find.Finder
+}
+
+func NewFinder(client *govmomi.Client, dcPath string) (finder, error) {
+	f := finder{find.NewFinder(client.Client, false)}
+	dc, err := f.Datacenter(dcPath)
 	if err != nil {
-		return Finder{}, fmt.Errorf("error retrieving datacenter '%s': %s", dcPath, err)
+		return finder{}, fmt.Errorf("error retrieving datacenter '%s': %s", dcPath, err)
 	}
 
-	finder.SetDatacenter(dc)
-	return finder, nil
+	f.SetDatacenter(dc)
+	return f, nil
 }
 
 // adapted from tf vsphere provider internals
 
-func (f Finder) Datastore(path string) (*object.Datastore, error) {
+func (f finder) Datastore(path string) (*object.Datastore, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultAPITimeout)
 	defer cancel()
 
@@ -42,7 +41,7 @@ func (f Finder) Datastore(path string) (*object.Datastore, error) {
 	return obj, nil
 }
 
-func (f Finder) Datacenter(path string) (*object.Datacenter, error) {
+func (f finder) Datacenter(path string) (*object.Datacenter, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultAPITimeout)
 	defer cancel()
 
@@ -54,7 +53,7 @@ func (f Finder) Datacenter(path string) (*object.Datacenter, error) {
 	return obj, nil
 }
 
-func (f Finder) Folder(path string) (*object.Folder, error) {
+func (f finder) Folder(path string) (*object.Folder, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultAPITimeout)
 	defer cancel()
 
@@ -66,7 +65,7 @@ func (f Finder) Folder(path string) (*object.Folder, error) {
 	return obj, nil
 }
 
-func (f Finder) ResourcePool(path string) (*object.ResourcePool, error) {
+func (f finder) ResourcePool(path string) (*object.ResourcePool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultAPITimeout)
 	defer cancel()
 
@@ -78,14 +77,14 @@ func (f Finder) ResourcePool(path string) (*object.ResourcePool, error) {
 	return obj, nil
 }
 
-func (f Finder) Network(networkPath string) (types.ManagedObjectReference, error) {
+func (f finder) Network(networkPath string) (object.NetworkReference, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultAPITimeout)
 	defer cancel()
 
 	obj, err := f.Finder.Network(ctx, networkPath)
 	if err != nil {
-		return types.ManagedObjectReference{}, fmt.Errorf("Finding network: %s", err)
+		return nil, fmt.Errorf("Finding network: %s", err)
 	}
 
-	return obj.Reference(), nil
+	return obj, nil
 }

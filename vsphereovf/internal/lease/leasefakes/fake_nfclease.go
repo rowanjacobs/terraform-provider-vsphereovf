@@ -41,6 +41,29 @@ type FakeNFCLease struct {
 		result1 *nfc.LeaseInfo
 		result2 error
 	}
+	StartUpdaterStub        func(context.Context, *nfc.LeaseInfo) *nfc.LeaseUpdater
+	startUpdaterMutex       sync.RWMutex
+	startUpdaterArgsForCall []struct {
+		arg1 context.Context
+		arg2 *nfc.LeaseInfo
+	}
+	startUpdaterReturns struct {
+		result1 *nfc.LeaseUpdater
+	}
+	startUpdaterReturnsOnCall map[int]struct {
+		result1 *nfc.LeaseUpdater
+	}
+	CompleteStub        func(context.Context) error
+	completeMutex       sync.RWMutex
+	completeArgsForCall []struct {
+		arg1 context.Context
+	}
+	completeReturns struct {
+		result1 error
+	}
+	completeReturnsOnCall map[int]struct {
+		result1 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -153,6 +176,103 @@ func (fake *FakeNFCLease) WaitReturnsOnCall(i int, result1 *nfc.LeaseInfo, resul
 	}{result1, result2}
 }
 
+func (fake *FakeNFCLease) StartUpdater(arg1 context.Context, arg2 *nfc.LeaseInfo) *nfc.LeaseUpdater {
+	fake.startUpdaterMutex.Lock()
+	ret, specificReturn := fake.startUpdaterReturnsOnCall[len(fake.startUpdaterArgsForCall)]
+	fake.startUpdaterArgsForCall = append(fake.startUpdaterArgsForCall, struct {
+		arg1 context.Context
+		arg2 *nfc.LeaseInfo
+	}{arg1, arg2})
+	fake.recordInvocation("StartUpdater", []interface{}{arg1, arg2})
+	fake.startUpdaterMutex.Unlock()
+	if fake.StartUpdaterStub != nil {
+		return fake.StartUpdaterStub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fake.startUpdaterReturns.result1
+}
+
+func (fake *FakeNFCLease) StartUpdaterCallCount() int {
+	fake.startUpdaterMutex.RLock()
+	defer fake.startUpdaterMutex.RUnlock()
+	return len(fake.startUpdaterArgsForCall)
+}
+
+func (fake *FakeNFCLease) StartUpdaterArgsForCall(i int) (context.Context, *nfc.LeaseInfo) {
+	fake.startUpdaterMutex.RLock()
+	defer fake.startUpdaterMutex.RUnlock()
+	return fake.startUpdaterArgsForCall[i].arg1, fake.startUpdaterArgsForCall[i].arg2
+}
+
+func (fake *FakeNFCLease) StartUpdaterReturns(result1 *nfc.LeaseUpdater) {
+	fake.StartUpdaterStub = nil
+	fake.startUpdaterReturns = struct {
+		result1 *nfc.LeaseUpdater
+	}{result1}
+}
+
+func (fake *FakeNFCLease) StartUpdaterReturnsOnCall(i int, result1 *nfc.LeaseUpdater) {
+	fake.StartUpdaterStub = nil
+	if fake.startUpdaterReturnsOnCall == nil {
+		fake.startUpdaterReturnsOnCall = make(map[int]struct {
+			result1 *nfc.LeaseUpdater
+		})
+	}
+	fake.startUpdaterReturnsOnCall[i] = struct {
+		result1 *nfc.LeaseUpdater
+	}{result1}
+}
+
+func (fake *FakeNFCLease) Complete(arg1 context.Context) error {
+	fake.completeMutex.Lock()
+	ret, specificReturn := fake.completeReturnsOnCall[len(fake.completeArgsForCall)]
+	fake.completeArgsForCall = append(fake.completeArgsForCall, struct {
+		arg1 context.Context
+	}{arg1})
+	fake.recordInvocation("Complete", []interface{}{arg1})
+	fake.completeMutex.Unlock()
+	if fake.CompleteStub != nil {
+		return fake.CompleteStub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fake.completeReturns.result1
+}
+
+func (fake *FakeNFCLease) CompleteCallCount() int {
+	fake.completeMutex.RLock()
+	defer fake.completeMutex.RUnlock()
+	return len(fake.completeArgsForCall)
+}
+
+func (fake *FakeNFCLease) CompleteArgsForCall(i int) context.Context {
+	fake.completeMutex.RLock()
+	defer fake.completeMutex.RUnlock()
+	return fake.completeArgsForCall[i].arg1
+}
+
+func (fake *FakeNFCLease) CompleteReturns(result1 error) {
+	fake.CompleteStub = nil
+	fake.completeReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeNFCLease) CompleteReturnsOnCall(i int, result1 error) {
+	fake.CompleteStub = nil
+	if fake.completeReturnsOnCall == nil {
+		fake.completeReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.completeReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *FakeNFCLease) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -160,6 +280,10 @@ func (fake *FakeNFCLease) Invocations() map[string][][]interface{} {
 	defer fake.uploadMutex.RUnlock()
 	fake.waitMutex.RLock()
 	defer fake.waitMutex.RUnlock()
+	fake.startUpdaterMutex.RLock()
+	defer fake.startUpdaterMutex.RUnlock()
+	fake.completeMutex.RLock()
+	defer fake.completeMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

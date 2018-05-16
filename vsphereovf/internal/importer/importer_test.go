@@ -18,7 +18,6 @@ var _ = Describe("Importer", func() {
 	var (
 		importr      importer.Importer
 		ovfManager   *importerfakes.FakeOVFManager
-		finder       *importerfakes.FakeFinder
 		resourcePool *importerfakes.FakeResourcePool
 		lease        *importerfakes.FakeLease
 
@@ -26,7 +25,7 @@ var _ = Describe("Importer", func() {
 		datastore       types.ManagedObjectReference
 
 		ovfContents  string
-		networkRemap map[string]interface{}
+		networkRemap map[string]object.NetworkReference
 	)
 
 	BeforeEach(func() {
@@ -41,9 +40,8 @@ var _ = Describe("Importer", func() {
 
 		resourcePool = &importerfakes.FakeResourcePool{}
 		ovfManager = &importerfakes.FakeOVFManager{}
-		finder = &importerfakes.FakeFinder{}
 		lease = &importerfakes.FakeLease{}
-		importr = importer.NewImporter(ovfManager, finder, resourcePool, datastore)
+		importr = importer.NewImporter(ovfManager, resourcePool, datastore)
 
 		envelope := &ovf.Envelope{
 			Network: &ovf.NetworkSection{
@@ -64,28 +62,23 @@ var _ = Describe("Importer", func() {
 			},
 		}
 
-		networkRemap = map[string]interface{}{
-			"network-a": "network-1",
-			"network-b": "network-2",
-		}
 		buf := bytes.NewBuffer([]byte{})
 		err := xml.NewEncoder(buf).Encode(envelope)
 		Expect(err).NotTo(HaveOccurred())
 		ovfContents = buf.String()
 
-		netRef1 := types.ManagedObjectReference{
-			Value: "reference #1",
+		networkRemap = map[string]object.NetworkReference{
+			"network-a": object.Network{
+				object.NewCommon(nil, types.ManagedObjectReference{
+					Value: "reference #1",
+				}),
+			},
+			"network-b": object.Network{
+				object.NewCommon(nil, types.ManagedObjectReference{
+					Value: "reference #2",
+				}),
+			},
 		}
-		netRef2 := types.ManagedObjectReference{
-			Value: "reference #2",
-		}
-		netRef3 := types.ManagedObjectReference{
-			Value: "reference #3",
-		}
-
-		finder.NetworkReturnsOnCall(0, netRef1, nil)
-		finder.NetworkReturnsOnCall(1, netRef2, nil)
-		finder.NetworkReturnsOnCall(2, netRef3, nil)
 
 		ovfManager.CreateImportSpecReturns(&types.OvfCreateImportSpecResult{}, nil)
 		resourcePool.ReferenceReturns(resourcePoolRef)
@@ -100,10 +93,7 @@ var _ = Describe("Importer", func() {
 			_, actualContents, actualResourcePool, actualDatastore, params := ovfManager.CreateImportSpecArgsForCall(0)
 			Expect(actualContents).To(Equal(ovfContents))
 
-			Expect(finder.NetworkArgsForCall(0)).To(Equal("network-1"))
-			Expect(finder.NetworkArgsForCall(1)).To(Equal("network-2"))
-			Expect(finder.NetworkCallCount()).To(Equal(2))
-			Expect(params.NetworkMapping).To(Equal([]types.OvfNetworkMapping{
+			Expect(params.NetworkMapping).To(ConsistOf([]types.OvfNetworkMapping{
 				{
 					Name: "network-a",
 					Network: types.ManagedObjectReference{
@@ -139,17 +129,6 @@ var _ = Describe("Importer", func() {
 			})
 		})
 
-		Context("when we fail to find a network", func() {
-			BeforeEach(func() {
-				ovfContents = `some gtrash @@##<<<< that isnt valid xml`
-			})
-
-			It("fails", func() {
-				_, err := importr.CreateImportSpec(ovfContents, networkRemap)
-				Expect(err).To(HaveOccurred())
-			})
-		})
-
 		Context("when the ovf manager returns a soap fault", func() {
 			BeforeEach(func() {
 				resultWithFault := &types.OvfCreateImportSpecResult{
@@ -164,7 +143,7 @@ var _ = Describe("Importer", func() {
 
 			It("returns an error", func() {
 				_, err := importr.CreateImportSpec(ovfContents, networkRemap)
-				Expect(err).To(MatchError("Error creating import spec: coconut"))
+				Expect(err).To(MatchError("SOAP API fault: coconut"))
 			})
 		})
 	})

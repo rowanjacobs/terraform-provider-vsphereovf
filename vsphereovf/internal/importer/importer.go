@@ -16,7 +16,6 @@ import (
 
 type Importer struct {
 	ovfManager   OVFManager
-	finder       Finder
 	resourcePool ResourcePool
 	datastore    mo.Reference
 }
@@ -50,27 +49,20 @@ type OVFManager interface {
 	CreateImportSpec(context.Context, string, mo.Reference, mo.Reference, types.OvfCreateImportSpecParams) (*types.OvfCreateImportSpecResult, error)
 }
 
-//go:generate counterfeiter . Finder
-type Finder interface {
-	// FromName(string, string) (object.Reference, error)
-	Network(string) (types.ManagedObjectReference, error)
-}
-
-func NewImporter(manager OVFManager, finder Finder, resourcePool ResourcePool, datastore mo.Reference) Importer {
+func NewImporter(manager OVFManager, resourcePool ResourcePool, datastore mo.Reference) Importer {
 	return Importer{
 		ovfManager:   manager,
-		finder:       finder,
 		resourcePool: resourcePool,
 		datastore:    datastore,
 	}
 }
 
-func NewImporterFromClient(client *govmomi.Client, finder Finder, resourcePool ResourcePool, datastore mo.Reference) Importer {
+func NewImporterFromClient(client *govmomi.Client, resourcePool ResourcePool, datastore mo.Reference) Importer {
 	manager := ovf.NewManager(client.Client)
-	return NewImporter(manager, finder, resourcePool, datastore)
+	return NewImporter(manager, resourcePool, datastore)
 }
 
-func (i Importer) CreateImportSpec(ovfContents string, networkRemap map[string]interface{}) (*types.OvfCreateImportSpecResult, error) {
+func (i Importer) CreateImportSpec(ovfContents string, networkRemap map[string]object.NetworkReference) (*types.OvfCreateImportSpecResult, error) {
 	envelope, err := ovf.Unmarshal(bytes.NewBufferString(ovfContents))
 	if err != nil {
 		return nil, fmt.Errorf("invalid ovf: %s", err)
@@ -81,12 +73,11 @@ func (i Importer) CreateImportSpec(ovfContents string, networkRemap map[string]i
 		if networkRemap[net.Name] == nil {
 			continue
 		}
-		netRef, err := i.finder.Network(networkRemap[net.Name].(string))
-		if err != nil {
-			return nil, fmt.Errorf("could not find network %s in network mapping: %s", networkRemap[net.Name], err)
-		}
 
-		networkMapping = append(networkMapping, types.OvfNetworkMapping{Name: net.Name, Network: netRef})
+		networkMapping = append(networkMapping, types.OvfNetworkMapping{
+			Name:    net.Name,
+			Network: networkRemap[net.Name].Reference(),
+		})
 	}
 	params := types.OvfCreateImportSpecParams{NetworkMapping: networkMapping}
 
@@ -95,7 +86,7 @@ func (i Importer) CreateImportSpec(ovfContents string, networkRemap map[string]i
 		return nil, err
 	}
 	if len(importSpec.Error) > 0 {
-		return nil, fmt.Errorf("Error creating import spec: %s", importSpec.Error[0].LocalizedMessage)
+		return nil, fmt.Errorf("SOAP API fault: %s", importSpec.Error[0].LocalizedMessage)
 	}
 	return importSpec, nil
 }
