@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/internal/lease"
+	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/lease"
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/nfc"
 	"github.com/vmware/govmomi/object"

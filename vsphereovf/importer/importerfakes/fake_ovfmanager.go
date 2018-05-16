@@ -5,7 +5,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/internal/importer"
+	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/importer"
 	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/types"
 )

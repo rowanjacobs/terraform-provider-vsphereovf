@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/internal/importer"
-	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/internal/search"
+	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/importer"
+	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/search"
 	"github.com/vmware/govmomi"
 )
 

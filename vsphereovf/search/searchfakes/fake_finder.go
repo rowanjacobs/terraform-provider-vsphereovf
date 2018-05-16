@@ -4,7 +4,7 @@ package searchfakes
 import (
 	"sync"
 
-	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/internal/search"
+	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/search"
 	"github.com/vmware/govmomi/object"
 )
 

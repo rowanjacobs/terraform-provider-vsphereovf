@@ -5,8 +5,8 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/internal/search"
-	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/internal/search/searchfakes"
+	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/search"
+	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/search/searchfakes"
 	"github.com/vmware/govmomi/object"
 )
 

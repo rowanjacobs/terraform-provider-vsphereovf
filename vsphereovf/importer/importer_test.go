@@ -7,8 +7,8 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/internal/importer"
-	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/internal/importer/importerfakes"
+	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/importer"
+	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/importer/importerfakes"
 	"github.com/vmware/govmomi/object"
 	"github.com/vmware/govmomi/ovf"
 	"github.com/vmware/govmomi/vim25/types"

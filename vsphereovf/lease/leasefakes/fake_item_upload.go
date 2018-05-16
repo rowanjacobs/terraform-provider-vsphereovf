@@ -4,7 +4,7 @@ package leasefakes
 import (
 	"sync"
 
-	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/internal/lease"
+	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/lease"
 	"github.com/vmware/govmomi/nfc"
 )
 

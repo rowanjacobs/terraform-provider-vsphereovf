@@ -6,7 +6,7 @@ import (
 	"io"
 	"sync"
 
-	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/internal/lease"
+	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/lease"
 	"github.com/vmware/govmomi/nfc"
 	"github.com/vmware/govmomi/vim25/soap"
 	"github.com/vmware/govmomi/vim25/types"

@@ -4,7 +4,7 @@ package importerfakes
 import (
 	"sync"
 
-	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/internal/importer"
+	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/importer"
 	"github.com/vmware/govmomi/nfc"
 	"github.com/vmware/govmomi/vim25/types"
 )

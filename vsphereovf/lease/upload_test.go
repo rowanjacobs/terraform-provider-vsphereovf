@@ -9,8 +9,8 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/internal/lease"
-	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/internal/lease/leasefakes"
+	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/lease"
+	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/lease/leasefakes"
 	"github.com/vmware/govmomi/nfc"
 	"github.com/vmware/govmomi/vim25/types"
 )
