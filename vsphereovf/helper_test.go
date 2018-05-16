@@ -2,7 +2,9 @@ package vsphereovf_test
 
 import (
 	"context"
+	"errors"
 	"os"
+	"regexp"
 
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -12,6 +14,7 @@ import (
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/find"
 	"github.com/vmware/govmomi/object"
+	"github.com/vmware/govmomi/vim25/mo"
 )
 
 // set up providers for resource tests
@@ -71,4 +74,36 @@ func getTemplate(s *terraform.State, templatePath string) (*object.VirtualMachin
 	finder.SetDatacenter(dc)
 
 	return finder.VirtualMachine(context.Background(), templatePath)
+}
+
+func checkIfTemplateExistsInVSphere(expected bool, expectTemplate bool, fullPath string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		vm, err := getTemplate(s, fullPath)
+		if err != nil {
+			if ok, _ := regexp.MatchString("virtual machine with UUID \"[-a-f0-9]+\" not found", err.Error()); ok && !expected {
+				// Expected missing
+				return nil
+			}
+			return err
+		}
+		if !expected {
+			return errors.New("expected VM to be missing")
+		}
+
+		var o mo.VirtualMachine
+
+		err = vm.Properties(context.Background(), vm.Reference(), []string{"config.template"}, &o)
+		if err != nil {
+			return err
+		}
+
+		if o.Config.Template != expectTemplate {
+			if expectTemplate { //            v look at this alignment v
+				return errors.New("expected VM to be template but it was not")
+			}
+			return errors.New("expected VM not to be template but it was")
+		}
+
+		return nil
+	}
 }

@@ -2,24 +2,43 @@ package vsphereovf_test
 
 import (
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 
-	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf"
+	"github.com/hashicorp/terraform/helper/resource"
 )
 
-var _ = Describe("ovf Template resource", func() {
-	PDescribe("CreateTemplate", func() {
-		It("sets ID on the resource data object", func() {
-			resourceData := vsphereovf.TemplateResource().Data(nil)
-			err := resourceData.Set("name", "some-name")
-			Expect(err).NotTo(HaveOccurred())
-
-			err = vsphereovf.CreateTemplate(resourceData, nil)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(resourceData.Id()).To(Equal("some-name"))
-		})
-
-		It("", func() {
+var _ = Describe("OVF Template resource", func() {
+	It("creates a basic vSphere template", func() {
+		t := ginkgoTestWrapper()
+		resource.Test(t, resource.TestCase{
+			PreCheck: func() {
+				acceptanceTestPreCheck(t)
+			},
+			// CheckDestroy: checkIfTemplateExistsInVSphere(false),
+			Providers: acceptanceTestProviders,
+			Steps: []resource.TestStep{
+				{
+					Config: basicVSphereOVFTemplateResourceConfig,
+					Check: resource.ComposeTestCheckFunc(
+						checkIfTemplateExistsInVSphere(true, true, "coreos_production_vmware_ova"),
+					),
+				},
+			},
 		})
 	})
 })
+
+// TODO: this is specific to our vSphere environment.
+// we should get folder, dc, ds, rp, and network name from env vars.
+const basicVSphereOVFTemplateResourceConfig = `
+resource "vsphereovf_template" "terraform-test-ovf" {
+	path = "../ignored/coreos_production_vmware_ova.ovf"
+	folder = "khaleesi_templates"
+	datacenter = "pizza-boxes-dc"
+	resource_pool = "khaleesi"
+	datastore = "vnx5600-pizza-2"
+	template = true
+	network_mappings {
+		"VM Network" = "khaleesi"
+	}
+}
+`

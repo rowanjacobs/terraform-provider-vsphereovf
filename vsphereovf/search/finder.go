@@ -88,3 +88,15 @@ func (f finder) Network(networkPath string) (object.NetworkReference, error) {
 
 	return obj, nil
 }
+
+func (f finder) VirtualMachine(vmPath string) (object.VirtualMachine, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultAPITimeout)
+	defer cancel()
+
+	obj, err := f.Finder.VirtualMachine(ctx, vmPath)
+	if err != nil {
+		return object.VirtualMachine{}, fmt.Errorf("Finding virtual machine: %s", err)
+	}
+
+	return *obj, nil
+}

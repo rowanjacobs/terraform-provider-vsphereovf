@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/importer"
+	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/mark"
 	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/search"
 	"github.com/vmware/govmomi"
 )
@@ -18,10 +20,6 @@ func TemplateResource() *schema.Resource {
 		Delete: resourceTemplateDelete,
 		Update: resourceTemplateUpdate,
 		Schema: map[string]*schema.Schema{
-			"name": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
 			"path": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
@@ -46,19 +44,20 @@ func TemplateResource() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+			"template": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  true,
+			},
 		},
 	}
 }
 
 func CreateTemplate(d *schema.ResourceData, m interface{}) error {
-	// Set the ID of the Terraform resource.
-	// (Currently we just set the ID to the template name.)
-	// TODO: (Path/name might be a better option for this.)
-	d.SetId(d.Get("name").(string))
-	// stuff above this comment is unit tested
-
-	// TODO: find a way to unit test the rest of this function.
 	ovfPath, err := filepath.Abs(d.Get("path").(string))
+	ovfName := filepath.Base(ovfPath)
+	d.SetId(fmt.Sprintf("%s/%s", d.Get("folder").(string), ovfName))
+
 	ovfContents, err := ioutil.ReadFile(ovfPath)
 
 	client := m.(*govmomi.Client)
@@ -74,13 +73,26 @@ func CreateTemplate(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
-	i := importer.NewImporterFromClient(client, importer.ResourcePoolImpl{templateParentObjects.ResourcePool}, templateParentObjects.Datastore)
+	i := importer.NewImporterFromClient(
+		client,
+		templateParentObjects.ResourcePool,
+		templateParentObjects.Datastore,
+	)
 	importSpec, err := i.CreateImportSpec(string(ovfContents), templateParentObjects.Networks)
 	if err != nil {
 		return fmt.Errorf("error creating import spec: %s", err)
 	}
 
-	return i.Import(importSpec, templateParentObjects.Folder, filepath.Dir(ovfPath))
+	err = i.Import(importSpec, templateParentObjects.Folder, filepath.Dir(ovfPath))
+	if err != nil {
+		return err
+	}
+
+	name := strings.SplitN(ovfName, ".", 2)[0]
+	if d.Get("template").(bool) {
+		return mark.AsTemplate(client, d.Get("datacenter").(string), name)
+	}
+	return nil
 }
 
 func resourceTemplateRead(d *schema.ResourceData, m interface{}) error   { return nil }

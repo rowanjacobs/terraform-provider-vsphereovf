@@ -49,6 +49,8 @@ type OVFManager interface {
 	CreateImportSpec(context.Context, string, mo.Reference, mo.Reference, types.OvfCreateImportSpecParams) (*types.OvfCreateImportSpecResult, error)
 }
 
+// to keep ovfManager private, we have two separate constructors.
+// this one takes an OVFManager, which can be faked.
 func NewImporter(manager OVFManager, resourcePool ResourcePool, datastore mo.Reference) Importer {
 	return Importer{
 		ovfManager:   manager,
@@ -57,9 +59,14 @@ func NewImporter(manager OVFManager, resourcePool ResourcePool, datastore mo.Ref
 	}
 }
 
-func NewImporterFromClient(client *govmomi.Client, resourcePool ResourcePool, datastore mo.Reference) Importer {
-	manager := ovf.NewManager(client.Client)
-	return NewImporter(manager, resourcePool, datastore)
+// to keep ovfManager private, we have two separate constructors.
+// this one uses a library method ovf.NewManager to create an ovf.Manager from the govmomi.Client.
+func NewImporterFromClient(client *govmomi.Client, resourcePool *object.ResourcePool, datastore mo.Reference) Importer {
+	return NewImporter(
+		ovf.NewManager(client.Client),
+		ResourcePoolImpl{resourcePool},
+		datastore,
+	)
 }
 
 func (i Importer) CreateImportSpec(ovfContents string, networkRemap map[string]object.NetworkReference) (*types.OvfCreateImportSpecResult, error) {
