@@ -33,6 +33,8 @@ var _ = Describe("Lease", func() {
 		filePath = filepath.Join(tempDir, "some-temp-file")
 		err = ioutil.WriteFile(filePath, []byte("some contents"), os.ModePerm)
 		Expect(err).NotTo(HaveOccurred())
+
+		nfcLease.StartUpdaterReturns(&leasefakes.FakeNFCLeaseUpdater{})
 	})
 
 	Describe("Upload", func() {

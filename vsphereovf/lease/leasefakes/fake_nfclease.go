@@ -41,17 +41,17 @@ type FakeNFCLease struct {
 		result1 *nfc.LeaseInfo
 		result2 error
 	}
-	StartUpdaterStub        func(context.Context, *nfc.LeaseInfo) *nfc.LeaseUpdater
+	StartUpdaterStub        func(context.Context, *nfc.LeaseInfo) lease.NFCLeaseUpdater
 	startUpdaterMutex       sync.RWMutex
 	startUpdaterArgsForCall []struct {
 		arg1 context.Context
 		arg2 *nfc.LeaseInfo
 	}
 	startUpdaterReturns struct {
-		result1 *nfc.LeaseUpdater
+		result1 lease.NFCLeaseUpdater
 	}
 	startUpdaterReturnsOnCall map[int]struct {
-		result1 *nfc.LeaseUpdater
+		result1 lease.NFCLeaseUpdater
 	}
 	CompleteStub        func(context.Context) error
 	completeMutex       sync.RWMutex
@@ -176,7 +176,7 @@ func (fake *FakeNFCLease) WaitReturnsOnCall(i int, result1 *nfc.LeaseInfo, resul
 	}{result1, result2}
 }
 
-func (fake *FakeNFCLease) StartUpdater(arg1 context.Context, arg2 *nfc.LeaseInfo) *nfc.LeaseUpdater {
+func (fake *FakeNFCLease) StartUpdater(arg1 context.Context, arg2 *nfc.LeaseInfo) lease.NFCLeaseUpdater {
 	fake.startUpdaterMutex.Lock()
 	ret, specificReturn := fake.startUpdaterReturnsOnCall[len(fake.startUpdaterArgsForCall)]
 	fake.startUpdaterArgsForCall = append(fake.startUpdaterArgsForCall, struct {
@@ -206,22 +206,22 @@ func (fake *FakeNFCLease) StartUpdaterArgsForCall(i int) (context.Context, *nfc.
 	return fake.startUpdaterArgsForCall[i].arg1, fake.startUpdaterArgsForCall[i].arg2
 }
 
-func (fake *FakeNFCLease) StartUpdaterReturns(result1 *nfc.LeaseUpdater) {
+func (fake *FakeNFCLease) StartUpdaterReturns(result1 lease.NFCLeaseUpdater) {
 	fake.StartUpdaterStub = nil
 	fake.startUpdaterReturns = struct {
-		result1 *nfc.LeaseUpdater
+		result1 lease.NFCLeaseUpdater
 	}{result1}
 }
 
-func (fake *FakeNFCLease) StartUpdaterReturnsOnCall(i int, result1 *nfc.LeaseUpdater) {
+func (fake *FakeNFCLease) StartUpdaterReturnsOnCall(i int, result1 lease.NFCLeaseUpdater) {
 	fake.StartUpdaterStub = nil
 	if fake.startUpdaterReturnsOnCall == nil {
 		fake.startUpdaterReturnsOnCall = make(map[int]struct {
-			result1 *nfc.LeaseUpdater
+			result1 lease.NFCLeaseUpdater
 		})
 	}
 	fake.startUpdaterReturnsOnCall[i] = struct {
-		result1 *nfc.LeaseUpdater
+		result1 lease.NFCLeaseUpdater
 	}{result1}
 }
 

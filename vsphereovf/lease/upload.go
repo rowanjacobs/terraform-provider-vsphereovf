@@ -25,8 +25,21 @@ func NewLease(nfcLease NFCLease) Lease {
 type NFCLease interface {
 	Upload(context.Context, nfc.FileItem, io.Reader, soap.Upload) error
 	Wait(context.Context, []types.OvfFileItem) (*nfc.LeaseInfo, error)
-	StartUpdater(context.Context, *nfc.LeaseInfo) *nfc.LeaseUpdater
+	StartUpdater(context.Context, *nfc.LeaseInfo) NFCLeaseUpdater
 	Complete(context.Context) error
+}
+
+type NFCLeaseImpl struct {
+	*nfc.Lease
+}
+
+func (n NFCLeaseImpl) StartUpdater(ctx context.Context, info *nfc.LeaseInfo) NFCLeaseUpdater {
+	return n.Lease.StartUpdater(ctx, info)
+}
+
+//go:generate counterfeiter . NFCLeaseUpdater
+type NFCLeaseUpdater interface {
+	Done()
 }
 
 func (l Lease) UploadAll(fileItems []types.OvfFileItem, dir string) error {
