@@ -56,6 +56,11 @@ var _ = Describe("Provider", func() {
 
 			expectedGovmomiClient = &govmomi.Client{}
 
+			newGovmomiClientCallCount = 0
+			newGovmomiClientReceivedContext = nil
+			newGovmomiClientReceivedURL = nil
+			newGovmomiClientReceivedInsecure = false
+
 			newGovmomiClientStub := func(ctx context.Context, u *url.URL, insecure bool) (*govmomi.Client, error) {
 				newGovmomiClientCallCount++
 				newGovmomiClientReceivedContext = ctx
