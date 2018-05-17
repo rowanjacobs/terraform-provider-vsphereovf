@@ -1,5 +1,8 @@
-#!/usr/bin/env bash -eu
+#!/bin/bash -eux
 
-pushd terraform-provider-vsphereovf/ > /dev/null
+mkdir -p "${GOPATH}/src/github.com/rowanjacobs"
+ln -sf "${PWD}/terraform-provider-vsphereovf" "${GOPATH}/src/github.com/rowanjacobs"
+
+pushd "${GOPATH}/src/github.com/rowanjacobs/terraform-provider-vsphereovf" > /dev/null
 	ginkgo -r -p -v
 popd > /dev/null
