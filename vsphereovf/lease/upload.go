@@ -37,7 +37,9 @@ func (l Lease) UploadAll(fileItems []types.OvfFileItem, dir string) error {
 	}
 
 	updater := l.NFCLease.StartUpdater(ctx, leaseInfo)
-	defer updater.Done()
+	if updater != nil {
+		defer updater.Done() // acceptance fails if this doesn't happen
+	}
 
 	for _, i := range leaseInfo.Items {
 		err := l.Upload(i, filepath.Join(dir, i.Path))
