@@ -19,4 +19,4 @@ jobs:
   - get: terraform-provider-vsphereovf
     trigger: true
   - task: units
-    file: terraform-provider-vsphereovf/ci/units.yml
+    file: terraform-provider-vsphereovf/ci/units-task.yml

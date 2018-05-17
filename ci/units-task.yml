@@ -7,7 +7,7 @@ image_resource:
     repository: cfinfrastructure/deployment
 
 inputs:
-  - terraform-vsphere-ovf
+  - name: terraform-vsphere-ovf
 
 run:
   path: terraform-vsphere-ovf/ci/units.sh
