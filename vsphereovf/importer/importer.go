@@ -41,7 +41,7 @@ func (r ResourcePoolImpl) ImportVApp(ctx context.Context, importSpec types.BaseI
 	if err != nil {
 		return nil, err
 	}
-	return lease.NewLease(lease.NFCLeaseImpl{nfcLease}), nil
+	return lease.NewLease(nfcLease), nil
 }
 
 //go:generate counterfeiter . OVFManager
