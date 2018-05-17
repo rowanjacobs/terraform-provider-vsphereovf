@@ -1,0 +1,13 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: cfinfrastructure/deployment
+
+inputs:
+  - terraform-vsphere-ovf
+
+run:
+  path: terraform-vsphere-ovf/ci/units.sh

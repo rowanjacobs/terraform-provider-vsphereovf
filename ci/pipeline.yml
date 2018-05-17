@@ -1,0 +1,22 @@
+---
+
+groups:
+- name: terraform-provider-vsphereovf
+  jobs:
+  - unit-tests
+
+resources:
+- name: terraform-provider-vsphereovf
+  type: git
+  source:
+    branch: master
+    uri: https://github.com/rowanjacobs/terraform-provider-vsphereovf.git
+
+jobs:
+- name: unit-tests
+  public: true
+  plan:
+  - get: terraform-provider-vsphereovf
+    trigger: true
+  - task: units
+    file: terraform-provider-vsphereovf/ci/units.yml
