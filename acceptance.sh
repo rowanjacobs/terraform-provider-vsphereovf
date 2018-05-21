@@ -1,4 +1,4 @@
 #!/bin/bash
 pushd vsphereovf > /dev/null
-  TF_ACC="1" ginkgo -r -p -randomizeAllSpecs
+  TF_ACC="1" go test -v -timeout=12h
 popd
