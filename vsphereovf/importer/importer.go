@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/lease"
+	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/ovx"
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/nfc"
 	"github.com/vmware/govmomi/object"
@@ -28,12 +29,13 @@ type ResourcePool interface {
 
 //go:generate counterfeiter . Lease
 type Lease interface {
-	Upload(nfc.FileItem, string) error
+	Upload(nfc.FileItem) error
 	UploadAll([]types.OvfFileItem, string) error
 }
 
 type ResourcePoolImpl struct {
 	*object.ResourcePool
+	readerProvider ovx.ReaderProvider
 }
 
 func (r ResourcePoolImpl) ImportVApp(ctx context.Context, importSpec types.BaseImportSpec, folder *object.Folder, hostSystem *object.HostSystem) (Lease, error) {
@@ -41,7 +43,7 @@ func (r ResourcePoolImpl) ImportVApp(ctx context.Context, importSpec types.BaseI
 	if err != nil {
 		return nil, err
 	}
-	return lease.NewLease(nfcLease), nil
+	return lease.NewLease(nfcLease, r.readerProvider), nil
 }
 
 //go:generate counterfeiter . OVFManager
@@ -61,10 +63,10 @@ func NewImporter(manager OVFManager, resourcePool ResourcePool, datastore mo.Ref
 
 // to keep ovfManager private, we have two separate constructors.
 // this one uses a library method ovf.NewManager to create an ovf.Manager from the govmomi.Client.
-func NewImporterFromClient(client *govmomi.Client, resourcePool *object.ResourcePool, datastore mo.Reference) Importer {
+func NewImporterFromClient(client *govmomi.Client, resourcePool *object.ResourcePool, datastore mo.Reference, readerProvider ovx.ReaderProvider) Importer {
 	return NewImporter(
 		ovf.NewManager(client.Client),
-		ResourcePoolImpl{resourcePool},
+		ResourcePoolImpl{resourcePool, readerProvider},
 		datastore,
 	)
 }

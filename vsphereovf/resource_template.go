@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/importer"
 	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/mark"
+	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/ovx"
 	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/search"
 	"github.com/vmware/govmomi"
 )
@@ -53,12 +54,34 @@ func TemplateResource() *schema.Resource {
 	}
 }
 
+// TODO: do this in a less hacky and brittle way
+func ovf(path string) string {
+	base := filepath.Base(path)
+	if strings.HasSuffix(base, ".ova") {
+		return fmt.Sprintf("%s.ovf", strings.TrimSuffix(base, ".ova"))
+	}
+	return base
+}
+
 func CreateTemplate(d *schema.ResourceData, m interface{}) error {
 	ovfPath, err := filepath.Abs(d.Get("path").(string))
-	ovfName := filepath.Base(ovfPath)
+	ovfName := ovf(ovfPath)
 	d.SetId(fmt.Sprintf("%s/%s", d.Get("folder").(string), ovfName))
 
-	ovfContents, err := ioutil.ReadFile(ovfPath)
+	readerProvider, err := ovx.NewReaderProvider(ovfPath)
+	if err != nil {
+		return err
+	}
+
+	r, _, err := readerProvider.Reader(ovfName)
+	if err != nil {
+		return err
+	}
+
+	ovfContents, err := ioutil.ReadAll(r)
+	if err != nil {
+		return err
+	}
 
 	client := m.(*govmomi.Client)
 	templateParentObjects, err := search.FetchParentObjects(
@@ -77,6 +100,7 @@ func CreateTemplate(d *schema.ResourceData, m interface{}) error {
 		client,
 		templateParentObjects.ResourcePool,
 		templateParentObjects.Datastore,
+		readerProvider,
 	)
 	importSpec, err := i.CreateImportSpec(string(ovfContents), templateParentObjects.Networks)
 	if err != nil {

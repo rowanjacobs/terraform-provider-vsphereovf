@@ -9,8 +9,10 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gbytes"
 	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/lease"
 	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/lease/leasefakes"
+	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/ovx/ovxfakes"
 	"github.com/vmware/govmomi/nfc"
 	"github.com/vmware/govmomi/vim25/types"
 )
@@ -19,13 +21,22 @@ var _ = Describe("Lease", func() {
 	var (
 		leece    lease.Lease
 		nfcLease *leasefakes.FakeNFCLease
+		rp       *ovxfakes.FakeReaderProvider
+		buffer   *gbytes.Buffer
 
 		filePath string
 	)
 
 	BeforeEach(func() {
+		buffer = gbytes.NewBuffer()
+		_, err := buffer.Write([]byte("some contents"))
+		Expect(err).NotTo(HaveOccurred())
+
+		rp = &ovxfakes.FakeReaderProvider{}
+		rp.ReaderReturns(buffer, 42, nil)
+
 		nfcLease = &leasefakes.FakeNFCLease{}
-		leece = lease.NewLease(nfcLease)
+		leece = lease.NewLease(nfcLease, rp)
 
 		tempDir, err := ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
@@ -39,7 +50,7 @@ var _ = Describe("Lease", func() {
 		It("delegates to nfc.Lease", func() {
 			item := nfc.FileItem{}
 
-			err := leece.Upload(item, filePath)
+			err := leece.Upload(item)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(nfcLease.UploadCallCount()).To(Equal(1))
@@ -47,15 +58,17 @@ var _ = Describe("Lease", func() {
 
 			Expect(ctx).To(Equal(context.Background()))
 			Expect(receivedItem).To(Equal(item))
-			Expect(reader).To(BeAssignableToTypeOf(&os.File{}))
-			Expect(reader.(*os.File).Name()).To(Equal(filePath))
-			Expect(upload.ContentLength).To(Equal(int64(len([]byte("some contents")))))
+			Expect(reader).To(gbytes.Say("some contents"))
+			Expect(upload.ContentLength).To(BeEquivalentTo(42))
 		})
 
-		Context("when the file does not exist", func() {
+		Context("when readerprovider can't find the file", func() {
+			BeforeEach(func() {
+				rp.ReaderReturns(gbytes.NewBuffer(), -1, errors.New("no such file"))
+			})
 			It("returns an error", func() {
-				err := leece.Upload(nfc.FileItem{}, "/this/path/is/not/real")
-				Expect(err).To(MatchError("open /this/path/is/not/real: no such file or directory"))
+				err := leece.Upload(nfc.FileItem{})
+				Expect(err).To(HaveOccurred())
 			})
 		})
 
@@ -65,7 +78,7 @@ var _ = Describe("Lease", func() {
 			})
 
 			It("returns an error", func() {
-				err := leece.Upload(nfc.FileItem{}, filePath)
+				err := leece.Upload(nfc.FileItem{})
 				Expect(err).To(MatchError("Lease upload: coconut"))
 			})
 		})
@@ -115,13 +128,8 @@ var _ = Describe("Lease", func() {
 
 			Expect(itemUpload.UploadCallCount()).To(Equal(2))
 
-			item1, path1 := itemUpload.UploadArgsForCall(0)
-			Expect(item1.OvfFileItem).To(Equal(fileItems[0]))
-			Expect(path1).To(Equal("some-dir/first-path"))
-
-			item2, path2 := itemUpload.UploadArgsForCall(1)
-			Expect(item2.OvfFileItem).To(Equal(fileItems[1]))
-			Expect(path2).To(Equal("some-dir/second-path"))
+			Expect(itemUpload.UploadArgsForCall(0).OvfFileItem).To(Equal(fileItems[0]))
+			Expect(itemUpload.UploadArgsForCall(1).OvfFileItem).To(Equal(fileItems[1]))
 		})
 
 		Context("when we fail to to wait on the lease", func() {

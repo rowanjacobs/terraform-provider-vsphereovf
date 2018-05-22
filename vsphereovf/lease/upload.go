@@ -4,9 +4,8 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
-	"path/filepath"
 
+	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/ovx"
 	"github.com/vmware/govmomi/nfc"
 	"github.com/vmware/govmomi/vim25/soap"
 	"github.com/vmware/govmomi/vim25/types"
@@ -17,8 +16,8 @@ type Lease struct {
 	NFCLease NFCLease
 }
 
-func NewLease(nfcLease NFCLease) Lease {
-	return Lease{itemUploadImpl{nfcLease}, nfcLease}
+func NewLease(nfcLease NFCLease, rp ovx.ReaderProvider) Lease {
+	return Lease{itemUploadImpl{nfcLease, rp}, nfcLease}
 }
 
 //go:generate counterfeiter . NFCLease
@@ -41,8 +40,9 @@ func (l Lease) UploadAll(fileItems []types.OvfFileItem, dir string) error {
 		defer updater.Done() // acceptance fails if this doesn't happen
 	}
 
+	// items are OVA contents: OVF and VMDK files
 	for _, i := range leaseInfo.Items {
-		err := l.Upload(i, filepath.Join(dir, i.Path))
+		err := l.Upload(i)
 		if err != nil {
 			return err
 		}
@@ -53,27 +53,22 @@ func (l Lease) UploadAll(fileItems []types.OvfFileItem, dir string) error {
 
 //go:generate counterfeiter . ItemUpload
 type ItemUpload interface {
-	Upload(nfc.FileItem, string) error
+	Upload(nfc.FileItem) error
 }
 
 type itemUploadImpl struct {
-	nfcLease NFCLease
+	nfcLease       NFCLease
+	readerProvider ovx.ReaderProvider
 }
 
 // TODO: maybe this could be private? it needs an open lease...
-func (i itemUploadImpl) Upload(item nfc.FileItem, fullPath string) error {
-	file, err := os.Open(fullPath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	fileInfo, err := file.Stat()
+func (i itemUploadImpl) Upload(item nfc.FileItem) error {
+	r, size, err := i.readerProvider.Reader(item.Path)
 	if err != nil {
 		return err
 	}
 
-	err = i.nfcLease.Upload(context.Background(), item, file, soap.Upload{ContentLength: fileInfo.Size()})
+	err = i.nfcLease.Upload(context.Background(), item, r, soap.Upload{ContentLength: size})
 	if err != nil {
 		return fmt.Errorf("Lease upload: %s", err)
 	}

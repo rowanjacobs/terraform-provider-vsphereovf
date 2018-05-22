@@ -78,24 +78,6 @@
   version = "v3.5.1"
 
 [[projects]]
-  name = "github.com/coreos/etcd"
-  packages = [
-    "client",
-    "pkg/pathutil",
-    "pkg/srv",
-    "pkg/types",
-    "version"
-  ]
-  revision = "70c8726202dd91e482fb4029fd14af1d4ed1d5af"
-  version = "v3.3.5"
-
-[[projects]]
-  name = "github.com/coreos/go-semver"
-  packages = ["semver"]
-  revision = "8ab6407b697782a06568d4b7f1db25550ec2e4c6"
-  version = "v0.2.0"
-
-[[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
@@ -367,6 +349,7 @@
   packages = [
     ".",
     "format",
+    "gbytes",
     "internal/assertion",
     "internal/asyncassertion",
     "internal/oraclematcher",
@@ -378,8 +361,8 @@
     "matchers/support/goraph/util",
     "types"
   ]
-  revision = "003f63b7f4cff3fc95357005358af2de0f5fe152"
-  version = "v1.3.0"
+  revision = "62bff4df71bdbc266561a0caee19f0594b17c240"
+  version = "v1.4.0"
 
 [[projects]]
   name = "github.com/posener/complete"
@@ -390,12 +373,6 @@
     "match"
   ]
   revision = "98eb9847f27ba2008d380a32c98be474dea55bdf"
-  version = "v1.1.1"
-
-[[projects]]
-  name = "github.com/ugorji/go"
-  packages = ["codec"]
-  revision = "b4c50a2b199d93b13dc15e78929cfb23bfdf21ab"
   version = "v1.1.1"
 
 [[projects]]
@@ -567,6 +544,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "acdd4fa7a0d34ee4e7779e5c8195e497ddf2919c288635364e3b3314a08488d1"
+  inputs-digest = "2f59ecdca95eee7f916afff54958055834f402e7e532d9a29b5eb1a9482989d4"
   solver-name = "gps-cdcl"
   solver-version = 1

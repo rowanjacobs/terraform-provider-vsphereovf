@@ -9,11 +9,10 @@ import (
 )
 
 type FakeItemUpload struct {
-	UploadStub        func(nfc.FileItem, string) error
+	UploadStub        func(nfc.FileItem) error
 	uploadMutex       sync.RWMutex
 	uploadArgsForCall []struct {
 		arg1 nfc.FileItem
-		arg2 string
 	}
 	uploadReturns struct {
 		result1 error
@@ -25,17 +24,16 @@ type FakeItemUpload struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeItemUpload) Upload(arg1 nfc.FileItem, arg2 string) error {
+func (fake *FakeItemUpload) Upload(arg1 nfc.FileItem) error {
 	fake.uploadMutex.Lock()
 	ret, specificReturn := fake.uploadReturnsOnCall[len(fake.uploadArgsForCall)]
 	fake.uploadArgsForCall = append(fake.uploadArgsForCall, struct {
 		arg1 nfc.FileItem
-		arg2 string
-	}{arg1, arg2})
-	fake.recordInvocation("Upload", []interface{}{arg1, arg2})
+	}{arg1})
+	fake.recordInvocation("Upload", []interface{}{arg1})
 	fake.uploadMutex.Unlock()
 	if fake.UploadStub != nil {
-		return fake.UploadStub(arg1, arg2)
+		return fake.UploadStub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
@@ -49,10 +47,10 @@ func (fake *FakeItemUpload) UploadCallCount() int {
 	return len(fake.uploadArgsForCall)
 }
 
-func (fake *FakeItemUpload) UploadArgsForCall(i int) (nfc.FileItem, string) {
+func (fake *FakeItemUpload) UploadArgsForCall(i int) nfc.FileItem {
 	fake.uploadMutex.RLock()
 	defer fake.uploadMutex.RUnlock()
-	return fake.uploadArgsForCall[i].arg1, fake.uploadArgsForCall[i].arg2
+	return fake.uploadArgsForCall[i].arg1
 }
 
 func (fake *FakeItemUpload) UploadReturns(result1 error) {
