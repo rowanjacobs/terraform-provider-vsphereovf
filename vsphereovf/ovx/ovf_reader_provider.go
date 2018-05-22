@@ -7,7 +7,7 @@ import (
 )
 
 type OVFReaderProvider struct {
-	ovfPath string
+	ovfDir string
 }
 
 func NewOVFReaderProvider(path string) (OVFReaderProvider, error) {
@@ -17,13 +17,12 @@ func NewOVFReaderProvider(path string) (OVFReaderProvider, error) {
 	}
 
 	return OVFReaderProvider{
-		ovfPath: path,
+		ovfDir: filepath.Dir(path),
 	}, nil
 }
 
 func (o OVFReaderProvider) Reader(relativePath string) (io.Reader, int64, error) {
-	parentDir := filepath.Dir(o.ovfPath)
-	f, err := os.Open(filepath.Join(parentDir, relativePath))
+	f, err := os.Open(filepath.Join(o.ovfDir, relativePath))
 	if err != nil {
 		return nil, 0, err
 	}
