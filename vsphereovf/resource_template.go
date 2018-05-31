@@ -1,6 +1,7 @@
 package vsphereovf
 
 import (
+	"crypto/sha1"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -82,6 +83,8 @@ func CreateTemplate(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
+
+	d.Set("contents_sha", sha1.Sum(ovfContents))
 
 	client := m.(*govmomi.Client)
 	templateParentObjects, err := search.FetchParentObjects(
