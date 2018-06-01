@@ -97,6 +97,13 @@ func (f finder) VirtualMachine(vmPath string) (object.VirtualMachine, error) {
 	log.Printf("[DEBUG] searching for vm at %s\n", vmPath)
 	obj, err := f.Finder.VirtualMachine(ctx, vmPath)
 	if err != nil {
+		fmt.Println(err)
+		if _, ok := err.(*find.NotFoundError); ok {
+			return object.VirtualMachine{}, NotFoundError{err.Error()}
+		}
+		if _, ok := err.(*find.MultipleFoundError); ok {
+			return object.VirtualMachine{}, MultipleFoundError{err.Error()}
+		}
 		return object.VirtualMachine{}, fmt.Errorf("Finding virtual machine: %s", err)
 	}
 
