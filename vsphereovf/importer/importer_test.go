@@ -87,12 +87,13 @@ var _ = Describe("Importer", func() {
 
 	Describe("CreateImportSpec", func() {
 		It("creates an import spec", func() {
-			_, err := importr.CreateImportSpec(ovfContents, networkRemap)
+			_, err := importr.CreateImportSpec("some-template-name", ovfContents, networkRemap)
 			Expect(err).NotTo(HaveOccurred())
 
 			_, actualContents, actualResourcePool, actualDatastore, params := ovfManager.CreateImportSpecArgsForCall(0)
 			Expect(actualContents).To(Equal(ovfContents))
 
+			Expect(params.EntityName).To(Equal("some-template-name"))
 			Expect(params.NetworkMapping).To(ConsistOf([]types.OvfNetworkMapping{
 				{
 					Name: "network-a",
@@ -117,7 +118,7 @@ var _ = Describe("Importer", func() {
 			})
 
 			It("fails", func() {
-				_, err := importr.CreateImportSpec(ovfContents, networkRemap)
+				_, err := importr.CreateImportSpec("name", ovfContents, networkRemap)
 				Expect(err).To(HaveOccurred())
 			})
 		})
@@ -135,7 +136,7 @@ var _ = Describe("Importer", func() {
 			})
 
 			It("returns an error", func() {
-				_, err := importr.CreateImportSpec(ovfContents, networkRemap)
+				_, err := importr.CreateImportSpec("name", ovfContents, networkRemap)
 				Expect(err).To(MatchError("SOAP API fault: coconut"))
 			})
 		})

@@ -13,13 +13,13 @@ var _ = Describe("OVF Template resource", func() {
 			PreCheck: func() {
 				acceptanceTestPreCheck(t)
 			},
-			// CheckDestroy: checkIfTemplateExistsInVSphere(false),
+			// CheckDestroy: checkIfTemplateExistsInVSphere(false, true, "coreos_production_vmware_ovf"),
 			Providers: acceptanceTestProviders,
 			Steps: []resource.TestStep{
 				{
 					Config: basicVSphereOVFTemplateResourceConfig,
 					Check: resource.ComposeTestCheckFunc(
-						checkIfTemplateExistsInVSphere(true, true, "coreos_production_vmware_ovf"),
+						checkIfTemplateExistsInVSphere(true, true, "terraform-test-coreos-ovf"),
 					),
 				},
 			},
@@ -32,7 +32,7 @@ var _ = Describe("OVF Template resource", func() {
 			PreCheck: func() {
 				acceptanceTestPreCheck(t)
 			},
-			// CheckDestroy: checkIfTemplateExistsInVSphere(false),
+			// CheckDestroy: checkIfTemplateExistsInVSphere(false, true, "coreos_production_vmware_ova"),
 			Providers: acceptanceTestProviders,
 			Steps: []resource.TestStep{
 				{
@@ -48,9 +48,15 @@ var _ = Describe("OVF Template resource", func() {
 
 // TODO: this is specific to our vSphere environment.
 // we should get folder, dc, ds, rp, and network name from env vars.
+
+// TODO: what's the smallest OVF and OVA template available?
+
+// TODO: in setup, download the coreOS templates, OR
+// TODO: configure the location via environment variables
 const basicVSphereOVFTemplateResourceConfig = `
 resource "vsphereovf_template" "terraform-test-ovf" {
-	path = "../ignored/coreos_production_vmware_ovf.ovf"
+	name = "terraform-test-coreos-ovf"
+	path = "../ignored/coreos_production_vmware_ova.ovf"
 	folder = "khaleesi_templates"
 	datacenter = "pizza-boxes-dc"
 	resource_pool = "khaleesi"

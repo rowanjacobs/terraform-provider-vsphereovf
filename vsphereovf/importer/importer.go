@@ -72,7 +72,7 @@ func NewImporterFromClient(client *govmomi.Client, resourcePool *object.Resource
 	)
 }
 
-func (i Importer) CreateImportSpec(ovfContents string, networkRemap map[string]object.NetworkReference) (*types.OvfCreateImportSpecResult, error) {
+func (i Importer) CreateImportSpec(name, ovfContents string, networkRemap map[string]object.NetworkReference) (*types.OvfCreateImportSpecResult, error) {
 	envelope, err := ovf.Unmarshal(bytes.NewBufferString(ovfContents))
 	if err != nil {
 		return nil, fmt.Errorf("invalid ovf: %s", err)
@@ -89,7 +89,7 @@ func (i Importer) CreateImportSpec(ovfContents string, networkRemap map[string]o
 			Network: networkRemap[net.Name].Reference(),
 		})
 	}
-	params := types.OvfCreateImportSpecParams{NetworkMapping: networkMapping}
+	params := types.OvfCreateImportSpecParams{EntityName: name, NetworkMapping: networkMapping}
 
 	importSpec, err := i.ovfManager.CreateImportSpec(context.Background(), ovfContents, i.resourcePool.Reference(), i.datastore, params)
 	if err != nil {

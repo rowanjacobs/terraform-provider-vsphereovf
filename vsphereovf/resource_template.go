@@ -23,6 +23,10 @@ func TemplateResource() *schema.Resource {
 		Delete: resourceTemplateDelete,
 		Update: resourceTemplateUpdate,
 		Schema: map[string]*schema.Schema{
+			"name": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 			"path": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
@@ -72,6 +76,12 @@ func CreateTemplate(d *schema.ResourceData, m interface{}) error {
 	ovfName := ovf(ovfPath)
 	d.SetId(fmt.Sprintf("%s/%s", d.Get("folder").(string), ovfName))
 
+	name, ok := d.Get("name").(string)
+	if !ok {
+		name = strings.SplitN(ovfName, ".", 2)[0]
+		d.Set("name", name)
+	}
+
 	readerProvider, err := ovx.NewReaderProvider(ovfPath)
 	if err != nil {
 		return err
@@ -90,9 +100,10 @@ func CreateTemplate(d *schema.ResourceData, m interface{}) error {
 	d.Set("contents_sha", sha1.Sum(ovfContents))
 
 	client := m.(*govmomi.Client)
+	dcPath := d.Get("datacenter").(string)
 	templateParentObjects, err := search.FetchParentObjects(
 		client,
-		d.Get("datacenter").(string),
+		dcPath,
 		d.Get("datastore").(string),
 		d.Get("folder").(string),
 		d.Get("resource_pool").(string),
@@ -108,7 +119,7 @@ func CreateTemplate(d *schema.ResourceData, m interface{}) error {
 		templateParentObjects.Datastore,
 		readerProvider,
 	)
-	importSpec, err := i.CreateImportSpec(string(ovfContents), templateParentObjects.Networks)
+	importSpec, err := i.CreateImportSpec(name, string(ovfContents), templateParentObjects.Networks)
 	if err != nil {
 		return fmt.Errorf("error creating import spec: %s", err)
 	}
@@ -118,9 +129,16 @@ func CreateTemplate(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
-	name := strings.SplitN(ovfName, ".", 2)[0]
+	props, err := search.VMProperties(client, dcPath, name)
+	if err != nil {
+		return err
+	}
+
+	d.Set("uuid", props.Config.Uuid)
+
+	log.Printf("[DEBUG] successfully created template resource: %+v\n", d)
 	if d.Get("template").(bool) {
-		return mark.AsTemplate(client, d.Get("datacenter").(string), name)
+		return mark.AsTemplate(client, dcPath, name)
 	}
 	return nil
 }
