@@ -3,6 +3,7 @@ package vsphereovf_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"regexp"
 
@@ -54,6 +55,38 @@ func acceptanceTestPreCheck(t resource.TestT) {
 
 	if v := os.Getenv("VSPHERE_SERVER"); v == "" {
 		t.Fatal("VSPHERE_SERVER must be set for acceptance tests")
+	}
+}
+
+const resourceTemplateFatal = "%s must be set for template resource acceptance tests"
+
+func resourceTemplateTestPreCheck(t resource.TestT) {
+	if v := os.Getenv("VSPHERE_OVA_PATH"); v == "" {
+		t.Fatal(fmt.Sprintf(resourceTemplateFatal, "VSPHERE_OVA_PATH"))
+	}
+
+	if v := os.Getenv("VSPHERE_OVF_PATH"); v == "" {
+		t.Fatal(fmt.Sprintf(resourceTemplateFatal, "VSPHERE_OVF_PATH"))
+	}
+
+	if v := os.Getenv("VSPHERE_FOLDER"); v == "" {
+		t.Fatal(fmt.Sprintf(resourceTemplateFatal, "VSPHERE_FOLDER"))
+	}
+
+	if v := os.Getenv("VSPHERE_DATACENTER"); v == "" {
+		t.Fatal(fmt.Sprintf(resourceTemplateFatal, "VSPHERE_DATACENTER"))
+	}
+
+	if v := os.Getenv("VSPHERE_RESOURCE_POOL"); v == "" {
+		t.Fatal(fmt.Sprintf(resourceTemplateFatal, "VSPHERE_RESOURCE_POOL"))
+	}
+
+	if v := os.Getenv("VSPHERE_DATASTORE"); v == "" {
+		t.Fatal(fmt.Sprintf(resourceTemplateFatal, "VSPHERE_DATASTORE"))
+	}
+
+	if v := os.Getenv("VSPHERE_NETWORK"); v == "" {
+		t.Fatal(fmt.Sprintf(resourceTemplateFatal, "VSPHERE_NETWORK"))
 	}
 }
 

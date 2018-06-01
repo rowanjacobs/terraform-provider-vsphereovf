@@ -1,23 +1,30 @@
 package vsphereovf_test
 
 import (
+	"fmt"
+	"os"
+
 	. "github.com/onsi/ginkgo"
 
 	"github.com/hashicorp/terraform/helper/resource"
 )
 
 var _ = Describe("OVF Template resource", func() {
+	// TODO: what's the smallest OVF and OVA template available?
+	// TODO: in setup, download the coreOS templates if env vars are empty
+
 	It("creates a basic vSphere template from an OVF template", func() {
 		t := ginkgoTestWrapper()
 		resource.Test(t, resource.TestCase{
 			PreCheck: func() {
 				acceptanceTestPreCheck(t)
+				resourceTemplateTestPreCheck(t)
 			},
 			// CheckDestroy: checkIfTemplateExistsInVSphere(false, true, "coreos_production_vmware_ovf"),
 			Providers: acceptanceTestProviders,
 			Steps: []resource.TestStep{
 				{
-					Config: basicVSphereOVFTemplateResourceConfig,
+					Config: basicVSphereOVFTemplateResourceConfig(),
 					Check: resource.ComposeTestCheckFunc(
 						checkIfTemplateExistsInVSphere(true, true, "terraform-test-coreos-ovf"),
 					),
@@ -31,12 +38,13 @@ var _ = Describe("OVF Template resource", func() {
 		resource.Test(t, resource.TestCase{
 			PreCheck: func() {
 				acceptanceTestPreCheck(t)
+				resourceTemplateTestPreCheck(t)
 			},
 			// CheckDestroy: checkIfTemplateExistsInVSphere(false, true, "coreos_production_vmware_ova"),
 			Providers: acceptanceTestProviders,
 			Steps: []resource.TestStep{
 				{
-					Config: basicVSphereOVATemplateResourceConfig,
+					Config: basicVSphereOVATemplateResourceConfig(),
 					Check: resource.ComposeTestCheckFunc(
 						checkIfTemplateExistsInVSphere(true, true, "coreos_production_vmware_ova"),
 					),
@@ -46,38 +54,51 @@ var _ = Describe("OVF Template resource", func() {
 	})
 })
 
-// TODO: this is specific to our vSphere environment.
-// we should get folder, dc, ds, rp, and network name from env vars.
-
-// TODO: what's the smallest OVF and OVA template available?
-
-// TODO: in setup, download the coreOS templates, OR
-// TODO: configure the location via environment variables
-const basicVSphereOVFTemplateResourceConfig = `
+func basicVSphereOVFTemplateResourceConfig() string {
+	template := `
 resource "vsphereovf_template" "terraform-test-ovf" {
 	name = "terraform-test-coreos-ovf"
-	path = "../ignored/coreos_production_vmware_ova.ovf"
-	folder = "khaleesi_templates"
-	datacenter = "pizza-boxes-dc"
-	resource_pool = "khaleesi"
-	datastore = "vnx5600-pizza-2"
+	path = "%s"
+	folder = "%s"
+	datacenter = "%s"
+	resource_pool = "%s"
+	datastore = "%s"
 	template = true
 	network_mappings {
-		"VM Network" = "khaleesi"
+		"VM Network" = "%s"
 	}
 }
 `
+	return fmt.Sprintf(template,
+		os.Getenv("VSPHERE_OVF_PATH"),
+		os.Getenv("VSPHERE_FOLDER"),
+		os.Getenv("VSPHERE_DATACENTER"),
+		os.Getenv("VSPHERE_RESOURCE_POOL"),
+		os.Getenv("VSPHERE_DATASTORE"),
+		os.Getenv("VSPHERE_NETWORK"),
+	)
+}
 
-const basicVSphereOVATemplateResourceConfig = `
+func basicVSphereOVATemplateResourceConfig() string {
+	template := `
 resource "vsphereovf_template" "terraform-test-ova" {
-	path = "../ignored/coreos_production_vmware_ova.ova"
-	folder = "khaleesi_templates"
-	datacenter = "pizza-boxes-dc"
-	resource_pool = "khaleesi"
-	datastore = "vnx5600-pizza-2"
+	path = "%s"
+	folder = "%s"
+	datacenter = "%s"
+	resource_pool = "%s"
+	datastore = "%s"
 	template = true
 	network_mappings {
-		"VM Network" = "khaleesi"
+		"VM Network" = "%s"
 	}
 }
 `
+	return fmt.Sprintf(template,
+		os.Getenv("VSPHERE_OVA_PATH"),
+		os.Getenv("VSPHERE_FOLDER"),
+		os.Getenv("VSPHERE_DATACENTER"),
+		os.Getenv("VSPHERE_RESOURCE_POOL"),
+		os.Getenv("VSPHERE_DATASTORE"),
+		os.Getenv("VSPHERE_NETWORK"),
+	)
+}
