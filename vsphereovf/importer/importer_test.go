@@ -106,13 +106,6 @@ var _ = Describe("Importer", func() {
 						Value: "reference #2",
 					},
 				},
-				// TODO: don't think we need this but we might
-				// {
-				// 	Name: "network-3",
-				// 	Network: types.ManagedObjectReference{
-				// 		Value: "reference #3",
-				// 	},
-				// },
 			}))
 			Expect(actualResourcePool).To(Equal(resourcePoolRef))
 			Expect(actualDatastore).To(Equal(datastore))
@@ -223,21 +216,3 @@ var _ = Describe("Importer", func() {
 		})
 	})
 })
-
-/*
-	// together, the following lines are a sort of blocking ImportVApp
-	// use our import spec to get an nfc lease from our resource pool
-	nfcLease, err := resourcePool.ImportVApp(ctx, importSpec.ImportSpec, folder, nil)
-	// use our import spec to get lease info (including list of item URLs) out of the nfc lease
-	// info, err := nfcLease.Wait(ctx, importSpec.FileItem)
-
-	// // use the nfc lease to upload the ovf file
-	// lease := lease.NewLease(nfcLease)
-	// err = lease.Upload(info.Items[0], ovfPath)
-
-	// new way:
-	lease := lease.NewLease(nfcLease)
-	err = lease.Import(importSpec.FileItem, ovfPath)
-	// fileItem, err := lease.Wait(importSpec.FileItem)
-	// err = lease.Upload(fileItem, ovfPath)
-*/
