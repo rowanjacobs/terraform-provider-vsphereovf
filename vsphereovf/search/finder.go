@@ -3,6 +3,7 @@ package search
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/vmware/govmomi"
@@ -93,6 +94,7 @@ func (f finder) VirtualMachine(vmPath string) (object.VirtualMachine, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultAPITimeout)
 	defer cancel()
 
+	log.Printf("[DEBUG] searching for vm at %s\n", vmPath)
 	obj, err := f.Finder.VirtualMachine(ctx, vmPath)
 	if err != nil {
 		return object.VirtualMachine{}, fmt.Errorf("Finding virtual machine: %s", err)

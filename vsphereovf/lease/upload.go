@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 
 	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/ovx"
 	"github.com/vmware/govmomi/nfc"
@@ -30,14 +31,19 @@ type NFCLease interface {
 
 func (l Lease) UploadAll(fileItems []types.OvfFileItem, dir string) error {
 	ctx := context.Background()
+	log.Println("[DEBUG] waiting on NFC lease")
 	leaseInfo, err := l.NFCLease.Wait(ctx, fileItems)
 	if err != nil {
 		return err
 	}
 
+	log.Println("[DEBUG] starting NFC lease updater")
 	updater := l.NFCLease.StartUpdater(ctx, leaseInfo)
 	if updater != nil {
-		defer updater.Done() // acceptance fails if this doesn't happen
+		defer func() {
+			log.Println("[DEBUG] finishing NFC lease updater")
+			updater.Done() // not unit tested but acceptance fails if this doesn't happen
+		}()
 	}
 
 	// items are OVA contents: OVF and VMDK files
@@ -63,6 +69,7 @@ type itemUploadImpl struct {
 
 // TODO: maybe this could be private? it needs an open lease...
 func (i itemUploadImpl) Upload(item nfc.FileItem) error {
+	log.Printf("[DEBUG] uploading file item %+v", item)
 	r, size, err := i.readerProvider.Reader(item.Path)
 	if err != nil {
 		return err

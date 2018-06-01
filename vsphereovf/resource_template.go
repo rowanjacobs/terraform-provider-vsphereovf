@@ -4,6 +4,7 @@ import (
 	"crypto/sha1"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"path/filepath"
 	"strings"
 
@@ -65,6 +66,8 @@ func ovf(path string) string {
 }
 
 func CreateTemplate(d *schema.ResourceData, m interface{}) error {
+	log.Printf("[DEBUG] creating template resource: %+v\n", d)
+
 	ovfPath, err := filepath.Abs(d.Get("path").(string))
 	ovfName := ovf(ovfPath)
 	d.SetId(fmt.Sprintf("%s/%s", d.Get("folder").(string), ovfName))

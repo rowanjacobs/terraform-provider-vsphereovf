@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/lease"
 	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf/ovx"
@@ -101,10 +102,12 @@ func (i Importer) CreateImportSpec(ovfContents string, networkRemap map[string]o
 }
 
 func (i Importer) Import(createImportSpecResult *types.OvfCreateImportSpecResult, folder *object.Folder, dir string) error {
+	log.Printf("[DEBUG] importing template as vApp")
 	l, err := i.resourcePool.ImportVApp(context.TODO(), createImportSpecResult.ImportSpec, folder, nil)
 	if err != nil {
 		return err
 	}
 
+	log.Printf("[DEBUG] acquired NFC lease")
 	return l.UploadAll(createImportSpecResult.FileItem, dir)
 }
