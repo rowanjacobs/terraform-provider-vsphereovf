@@ -77,9 +77,8 @@ func CreateTemplate(d *schema.ResourceData, m interface{}) error {
 	d.SetId(fmt.Sprintf("%s/%s", d.Get("folder").(string), ovfName))
 
 	name, ok := d.Get("name").(string)
-	if !ok {
+	if !ok || name == "" {
 		name = strings.SplitN(ovfName, ".", 2)[0]
-		d.Set("name", name)
 	}
 
 	readerProvider, err := ovx.NewReaderProvider(ovfPath)
@@ -129,6 +128,7 @@ func CreateTemplate(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
+	log.Printf("[DEBUG] searching for VM '%s'\n", name)
 	props, err := search.VMProperties(client, dcPath, name)
 	if err != nil {
 		return err
