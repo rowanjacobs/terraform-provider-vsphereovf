@@ -140,9 +140,39 @@ func CreateTemplate(d *schema.ResourceData, m interface{}) error {
 	if d.Get("template").(bool) {
 		return mark.AsTemplate(client, dcPath, name)
 	}
+
 	return nil
 }
 
-func resourceTemplateRead(d *schema.ResourceData, m interface{}) error   { return nil }
+func resourceTemplateRead(d *schema.ResourceData, m interface{}) error {
+	log.Printf("[DEBUG] reading template resource: %+v\n", d)
+	client := m.(*govmomi.Client)
+
+	name := d.Get("name").(string)
+
+	if name == "" {
+		name = strings.SplitN(strings.SplitN(d.Id(), "/", 2)[1], ".", 2)[0]
+	}
+
+	dcPath := d.Get("datacenter").(string)
+
+	props, err := search.VMProperties(client, dcPath, name)
+	if err != nil {
+		if _, ok := err.(search.NotFoundError); ok {
+			log.Printf("[DEBUG] template not found: %+v\n", err)
+			// If the VM is not found, set the ID to "".
+			// This causes Terraform to regenerate the resource.
+			d.SetId("")
+			return nil
+		}
+		return err
+	}
+
+	d.Set("uuid", props.Config.Uuid)
+
+	log.Printf("[DEBUG] successfully read template resource: %+v\n", d)
+	return nil
+}
+
 func resourceTemplateDelete(d *schema.ResourceData, m interface{}) error { return nil }
 func resourceTemplateUpdate(d *schema.ResourceData, m interface{}) error { return nil }
