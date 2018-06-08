@@ -159,9 +159,14 @@ func resourceTemplateRead(d *schema.ResourceData, m interface{}) error {
 	props, err := search.VMProperties(client, dcPath, name)
 	if err != nil {
 		if _, ok := err.(search.NotFoundError); ok {
-			log.Printf("[DEBUG] template not found: %+v\n", err)
+			log.Printf("[WARN] template not found: %+v\n", err)
 			// If the VM is not found, set the ID to "".
 			// This causes Terraform to regenerate the resource.
+			d.SetId("")
+			return nil
+		}
+		if _, ok := err.(search.DatacenterNotFoundError); ok {
+			log.Printf("[WARN] datacenter not found: %+v\n", err)
 			d.SetId("")
 			return nil
 		}

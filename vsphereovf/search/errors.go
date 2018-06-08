@@ -15,3 +15,12 @@ type MultipleFoundError struct {
 func (e MultipleFoundError) Error() string {
 	return e.message
 }
+
+type DatacenterNotFoundError struct {
+	dc      string
+	message string
+}
+
+func (d DatacenterNotFoundError) Error() string {
+	return d.message
+}
