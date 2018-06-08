@@ -1,3 +1,5 @@
 *.tfstate*
 *.tfvars
 example.tf
+.terraform
+terraform-provider-vsphereovf
