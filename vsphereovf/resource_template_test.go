@@ -20,8 +20,8 @@ var _ = Describe("OVF Template resource", func() {
 				acceptanceTestPreCheck(t)
 				resourceTemplateTestPreCheck(t)
 			},
-			// CheckDestroy: checkIfTemplateExistsInVSphere(false, true, "coreos_production_vmware_ovf"),
-			Providers: acceptanceTestProviders,
+			CheckDestroy: checkIfTemplateExistsInVSphere(false, true, "coreos_production_vmware_ovf"),
+			Providers:    acceptanceTestProviders,
 			Steps: []resource.TestStep{
 				{
 					Config: basicVSphereOVFTemplateResourceConfig(),
@@ -40,8 +40,8 @@ var _ = Describe("OVF Template resource", func() {
 				acceptanceTestPreCheck(t)
 				resourceTemplateTestPreCheck(t)
 			},
-			// CheckDestroy: checkIfTemplateExistsInVSphere(false, true, "coreos_production_vmware_ova"),
-			Providers: acceptanceTestProviders,
+			CheckDestroy: checkIfTemplateExistsInVSphere(false, true, "coreos_production_vmware_ova"),
+			Providers:    acceptanceTestProviders,
 			Steps: []resource.TestStep{
 				{
 					Config: basicVSphereOVATemplateResourceConfig(),

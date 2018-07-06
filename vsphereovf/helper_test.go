@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"regexp"
 
@@ -111,12 +112,24 @@ func getTemplate(s *terraform.State, templatePath string) (*object.VirtualMachin
 
 func checkIfTemplateExistsInVSphere(expected bool, expectTemplate bool, fullPath string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
+		resourceType := "vm"
+		if expectTemplate {
+			resourceType = "template"
+		}
+		to := "to"
+		if !expected {
+			to = "not to"
+		}
+		log.Printf("[DEBUG] expecting %s %s exist at path %s", resourceType, to, fullPath)
 		vm, err := getTemplate(s, fullPath)
 		if err != nil {
-			if ok, _ := regexp.MatchString("virtual machine with UUID \"[-a-f0-9]+\" not found", err.Error()); ok && !expected {
+			log.Printf("[WARN] received backend error: %s", err)
+			if ok, _ := regexp.MatchString("vm '[-_a-zA-Z0-9]+' not found", err.Error()); ok && !expected {
 				// Expected missing
+				log.Printf("[DEBUG] expected %s not to exist, and it did not in fact exist", resourceType)
 				return nil
 			}
+			log.Printf("[DEBUG] error getting template: %s", err)
 			return err
 		}
 		if !expected {
@@ -127,6 +140,7 @@ func checkIfTemplateExistsInVSphere(expected bool, expectTemplate bool, fullPath
 
 		err = vm.Properties(context.Background(), vm.Reference(), []string{"config.template"}, &o)
 		if err != nil {
+			log.Printf("[DEBUG] error getting vm properties: %s", err)
 			return err
 		}
 

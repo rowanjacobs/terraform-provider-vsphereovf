@@ -246,7 +246,7 @@
   branch = "master"
   name = "github.com/hashicorp/yamux"
   packages = ["."]
-  revision = "2658be15c5f05e76244154714161f17e3e77de2e"
+  revision = "3520598351bb3500a49ae9563f5539666ae0a27c"
 
 [[projects]]
   name = "github.com/jmespath/go-jmespath"
@@ -398,6 +398,7 @@
     "property",
     "session",
     "task",
+    "view",
     "vim25",
     "vim25/debug",
     "vim25/methods",
@@ -544,6 +545,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "2f59ecdca95eee7f916afff54958055834f402e7e532d9a29b5eb1a9482989d4"
+  inputs-digest = "c6d878cd7ff10d58f43732f983e1e5548869e4b5967838f76c5a94227c5c9eba"
   solver-name = "gps-cdcl"
   solver-version = 1
