@@ -16,6 +16,6 @@ OVF and OVA files to [vCenter][vmware-vcenter]. It is not ready for use yet!
 - update the template
 - destroy the template
 - otherwise customize the template
-- documentation!
+- documentation
 
 [provider]: https://github.com/terraform-providers/terraform-provider-vsphere
