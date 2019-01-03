@@ -52,6 +52,9 @@ var _ = Describe("OVF Template resource", func() {
 			},
 		})
 	})
+
+	// TODO: create a test that uses the vSphere template as a dependency for another resource
+	// (this fails and I never could quite figure out why)
 })
 
 func basicVSphereOVFTemplateResourceConfig() string {
