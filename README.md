@@ -1,5 +1,5 @@
 # Terraform vSphere OVF Provider
-This is a *draft* [Terraform][terraform] provider that will allow users to upload 
+This is a *draft* (not yet working!) [Terraform][terraform] provider that will allow users to upload 
 OVF and OVA files to [vCenter][vmware-vcenter]. It is not ready for use yet!
 
 [vmware-vcenter]: https://www.vmware.com/products/vcenter-server.html
@@ -12,6 +12,7 @@ OVF and OVA files to [vCenter][vmware-vcenter]. It is not ready for use yet!
 - export template UUID or name to be used by the [Terraform vSphere provider][provider]
 
 ## Upcoming features
+- read the template from other resources
 - update the template
 - destroy the template
 - otherwise customize the template
