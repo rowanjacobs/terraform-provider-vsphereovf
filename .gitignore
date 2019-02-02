@@ -3,3 +3,4 @@
 example.tf
 .terraform
 terraform-provider-vsphereovf
+ignored/
