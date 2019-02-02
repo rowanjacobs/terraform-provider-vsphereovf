@@ -60,7 +60,7 @@ func (f finder) Folder(path string) (*object.Folder, error) {
 
 	obj, err := f.Finder.Folder(ctx, path)
 	if err != nil {
-		return nil, fmt.Errorf("Finding folder: %s", err)
+		return nil, fmt.Errorf("Finding folder '%s': %s", path, err)
 	}
 
 	return obj, nil
