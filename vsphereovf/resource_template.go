@@ -102,11 +102,12 @@ func CreateTemplate(d *schema.ResourceData, m interface{}) error {
 
 	client := m.(*govmomi.Client)
 	dcPath := d.Get("datacenter").(string)
+	folder := d.Get("folder").(string)
 	templateParentObjects, err := search.FetchParentObjects(
 		client,
 		dcPath,
 		d.Get("datastore").(string),
-		d.Get("folder").(string),
+		folder,
 		d.Get("resource_pool").(string),
 		d.Get("network_mappings").(map[string]interface{}),
 	)
@@ -130,8 +131,9 @@ func CreateTemplate(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
-	log.Printf("[DEBUG] searching for VM '%s'\n", name)
-	props, err := search.VMProperties(client, dcPath, name)
+	inventoryPath := fmt.Sprintf("/%s/vm/%s/%s", dcPath, folder, name)
+	log.Printf("[DEBUG] searching for newly created VM %q\n", inventoryPath)
+	props, err := search.VMProperties(client, dcPath, inventoryPath)
 	if err != nil {
 		return err
 	}
@@ -140,7 +142,8 @@ func CreateTemplate(d *schema.ResourceData, m interface{}) error {
 
 	log.Printf("[DEBUG] successfully created template resource: %+v\n", d)
 	if d.Get("template").(bool) {
-		return mark.AsTemplate(client, dcPath, name)
+		log.Printf("[DEBUG] marking VM %q as template\n", inventoryPath)
+		return mark.AsTemplate(client, dcPath, inventoryPath)
 	}
 
 	return nil
@@ -153,12 +156,17 @@ func resourceTemplateRead(d *schema.ResourceData, m interface{}) error {
 	name := d.Get("name").(string)
 
 	if name == "" {
-		name = strings.SplitN(strings.SplitN(d.Id(), "/", 2)[1], ".", 2)[0]
+		if d.Id() != "" {
+			name = strings.SplitN(strings.SplitN(d.Id(), "/", 2)[1], ".", 2)[0]
+		}
 	}
 
 	dcPath := d.Get("datacenter").(string)
 
-	props, err := search.VMProperties(client, dcPath, name)
+	inventoryPath := fmt.Sprintf("/%s/vm/%s/%s", dcPath, d.Get("folder").(string), name)
+	log.Printf("[DEBUG] getting properties for VM at inventory path %q", inventoryPath)
+
+	props, err := search.VMProperties(client, dcPath, inventoryPath)
 	if err != nil {
 		if _, ok := err.(search.NotFoundError); ok {
 			log.Printf("[WARN] template not found: %+v\n", err)
@@ -188,12 +196,17 @@ func resourceTemplateDelete(d *schema.ResourceData, m interface{}) error {
 	name := d.Get("name").(string)
 
 	if name == "" {
-		name = strings.SplitN(strings.SplitN(d.Id(), "/", 2)[1], ".", 2)[0]
+		if d.Id() != "" {
+			name = strings.SplitN(strings.SplitN(d.Id(), "/", 2)[1], ".", 2)[0]
+		}
 	}
 
 	dcPath := d.Get("datacenter").(string)
 
-	props, err := search.VMProperties(client, dcPath, name)
+	inventoryPath := fmt.Sprintf("/%s/vm/%s/%s", dcPath, d.Get("folder").(string), name)
+	log.Printf("[DEBUG] getting properties for VM at inventory path %q", inventoryPath)
+
+	props, err := search.VMProperties(client, dcPath, inventoryPath)
 	if err != nil {
 		if _, ok := err.(search.NotFoundError); ok {
 			log.Printf("[WARN] template not found: %+v\n", err)

@@ -14,7 +14,6 @@ import (
 	"github.com/onsi/ginkgo"
 	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf"
 	"github.com/vmware/govmomi"
-	"github.com/vmware/govmomi/find"
 	"github.com/vmware/govmomi/object"
 	"github.com/vmware/govmomi/vim25/mo"
 )
@@ -91,26 +90,28 @@ func resourceTemplateTestPreCheck(t resource.TestT) {
 	}
 }
 
+func inventoryPath(templateName string) string {
+	return fmt.Sprintf("/%s/vm/%s/%s", os.Getenv("VSPHERE_DATACENTER"), os.Getenv("VSPHERE_FOLDER"), templateName)
+}
+
 // utility methods to get vSphere clients and make vSphere client API calls
 func getClient() *govmomi.Client {
 	return acceptanceTestProvider.Meta().(*govmomi.Client)
 }
 
-func getTemplate(s *terraform.State, templatePath string) (*object.VirtualMachine, error) {
-	finder := find.NewFinder(getClient().Client, false)
-
-	// TODO: let users select a datacenter that isn't default
-	dc, err := finder.DefaultDatacenter(context.Background())
+func getTemplate(s *terraform.State, inventoryPath string) (*object.VirtualMachine, error) {
+	si := object.NewSearchIndex(getClient().Client)
+	ref, err := si.FindByInventoryPath(context.Background(), inventoryPath)
 	if err != nil {
 		return nil, err
 	}
-
-	finder.SetDatacenter(dc)
-
-	return finder.VirtualMachine(context.Background(), templatePath)
+	if ref == nil {
+		return nil, fmt.Errorf("vm '%s' not found", inventoryPath)
+	}
+	return ref.(*object.VirtualMachine), nil
 }
 
-func checkIfTemplateExistsInVSphere(expected bool, expectTemplate bool, fullPath string) resource.TestCheckFunc {
+func checkIfTemplateExistsInVSphere(expected bool, expectTemplate bool, inventoryPath string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		resourceType := "vm"
 		if expectTemplate {
@@ -120,11 +121,11 @@ func checkIfTemplateExistsInVSphere(expected bool, expectTemplate bool, fullPath
 		if !expected {
 			to = "not to"
 		}
-		log.Printf("[DEBUG] expecting %s %s exist at path %s", resourceType, to, fullPath)
-		vm, err := getTemplate(s, fullPath)
+		log.Printf("[DEBUG] expecting %s %s exist at path %s", resourceType, to, inventoryPath)
+		vm, err := getTemplate(s, inventoryPath)
 		if err != nil {
 			log.Printf("[WARN] received backend error: %s", err)
-			if ok, _ := regexp.MatchString("vm '[-_a-zA-Z0-9]+' not found", err.Error()); ok && !expected {
+			if ok, _ := regexp.MatchString("vm '.+' not found", err.Error()); ok && !expected {
 				// Expected missing
 				log.Printf("[DEBUG] expected %s not to exist, and it did not in fact exist", resourceType)
 				return nil

@@ -9,16 +9,21 @@ import (
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/find"
 	"github.com/vmware/govmomi/object"
+	"github.com/vmware/govmomi/vim25"
 )
 
 const DefaultAPITimeout = 5 * time.Minute
 
 type finder struct {
 	*find.Finder
+	c *vim25.Client
 }
 
 func NewFinder(client *govmomi.Client, dcPath string) (finder, error) {
-	f := finder{find.NewFinder(client.Client, false)}
+	f := finder{
+		Finder: find.NewFinder(client.Client, false),
+		c:      client.Client,
+	}
 	dc, err := f.Datacenter(dcPath)
 	if err != nil {
 		return finder{}, DatacenterNotFoundError{dc: dcPath, message: err.Error()}
@@ -90,22 +95,22 @@ func (f finder) Network(networkPath string) (object.NetworkReference, error) {
 	return obj, nil
 }
 
-func (f finder) VirtualMachine(vmPath string) (object.VirtualMachine, error) {
+// takes VM or template inventory path, which has the format:
+// /$dcname/vm/$foldername/$vmname
+// this path will be more complex if there are nested folders.
+// TODO: you might be able to use $folder1/$folder2/.../$folderN as the folder name but I haven't tried it.
+func (f finder) VirtualMachine(inventoryPath string) (*object.VirtualMachine, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultAPITimeout)
 	defer cancel()
 
-	log.Printf("[DEBUG] searching for vm at %s\n", vmPath)
-	obj, err := f.Finder.VirtualMachine(ctx, vmPath)
+	si := object.NewSearchIndex(f.c)
+	log.Printf("[DEBUG] searching for vm at %s\n", inventoryPath)
+	ref, err := si.FindByInventoryPath(ctx, inventoryPath)
 	if err != nil {
-		fmt.Println(err)
-		if _, ok := err.(*find.NotFoundError); ok {
-			return object.VirtualMachine{}, NotFoundError{err.Error()}
-		}
-		if _, ok := err.(*find.MultipleFoundError); ok {
-			return object.VirtualMachine{}, MultipleFoundError{err.Error()}
-		}
-		return object.VirtualMachine{}, fmt.Errorf("Finding virtual machine: %s", err)
+		return nil, err
 	}
-
-	return *obj, nil
+	if ref == nil {
+		return nil, fmt.Errorf("could not find VM at inventory path '%s'", inventoryPath)
+	}
+	return ref.(*object.VirtualMachine), nil
 }

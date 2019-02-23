@@ -10,7 +10,6 @@ import (
 )
 
 var _ = Describe("OVF Template resource", func() {
-	// TODO: what's the smallest OVF and OVA template available?
 	// TODO: in setup, download the coreOS templates if env vars are empty
 
 	It("creates a basic vSphere template from an OVF template", func() {
@@ -20,13 +19,13 @@ var _ = Describe("OVF Template resource", func() {
 				acceptanceTestPreCheck(t)
 				resourceTemplateTestPreCheck(t)
 			},
-			CheckDestroy: checkIfTemplateExistsInVSphere(false, true, "coreos_production_vmware_ovf"),
+			CheckDestroy: checkIfTemplateExistsInVSphere(false, true, inventoryPath("terraform-test-coreos-ovf")),
 			Providers:    acceptanceTestProviders,
 			Steps: []resource.TestStep{
 				{
 					Config: basicVSphereOVFTemplateResourceConfig(),
 					Check: resource.ComposeTestCheckFunc(
-						checkIfTemplateExistsInVSphere(true, true, "terraform-test-coreos-ovf"),
+						checkIfTemplateExistsInVSphere(true, true, inventoryPath("terraform-test-coreos-ovf")),
 					),
 				},
 			},
@@ -40,13 +39,13 @@ var _ = Describe("OVF Template resource", func() {
 				acceptanceTestPreCheck(t)
 				resourceTemplateTestPreCheck(t)
 			},
-			CheckDestroy: checkIfTemplateExistsInVSphere(false, true, "coreos_production_vmware_ova"),
+			CheckDestroy: checkIfTemplateExistsInVSphere(false, true, inventoryPath("coreos_production_vmware_ova")),
 			Providers:    acceptanceTestProviders,
 			Steps: []resource.TestStep{
 				{
 					Config: basicVSphereOVATemplateResourceConfig(),
 					Check: resource.ComposeTestCheckFunc(
-						checkIfTemplateExistsInVSphere(true, true, "coreos_production_vmware_ova"),
+						checkIfTemplateExistsInVSphere(true, true, inventoryPath("coreos_production_vmware_ova")),
 					),
 				},
 			},
