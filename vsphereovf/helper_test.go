@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/onsi/ginkgo"
 	"github.com/rowanjacobs/terraform-provider-vsphereovf/vsphereovf"
+	"github.com/terraform-providers/terraform-provider-vsphere/vsphere"
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/object"
 	"github.com/vmware/govmomi/vim25/mo"
@@ -21,11 +22,16 @@ import (
 // set up providers for resource tests
 var acceptanceTestProvider *schema.Provider
 var acceptanceTestProviders map[string]terraform.ResourceProvider
+var acceptanceTestProvidersWithVSphere map[string]terraform.ResourceProvider
 
 func init() {
 	acceptanceTestProvider = vsphereovf.Provider().(*schema.Provider)
 	acceptanceTestProviders = map[string]terraform.ResourceProvider{
 		"vsphereovf": acceptanceTestProvider,
+	}
+	acceptanceTestProvidersWithVSphere = map[string]terraform.ResourceProvider{
+		"vsphereovf": acceptanceTestProvider,
+		"vsphere":    vsphere.Provider(),
 	}
 }
 

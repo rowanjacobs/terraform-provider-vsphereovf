@@ -52,8 +52,28 @@ var _ = Describe("OVF Template resource", func() {
 		})
 	})
 
-	// TODO: create a test that uses the vSphere template as a dependency for another resource
-	// (this fails and I never could quite figure out why)
+	// TODO: (this fails and I never could quite figure out why)
+	Context("when another Terraform provider is being used", func() {
+		It("can read a vSphere template created by this provider", func() {
+			t := ginkgoTestWrapper()
+			resource.Test(t, resource.TestCase{
+				PreCheck: func() {
+					acceptanceTestPreCheck(t)
+					resourceTemplateTestPreCheck(t)
+				},
+				CheckDestroy: checkIfTemplateExistsInVSphere(false, false, inventoryPath("terraform-test-coreos-vm")),
+				Providers:    acceptanceTestProvidersWithVSphere,
+				Steps: []resource.TestStep{
+					{
+						Config: readTemplateResourceConfig(),
+						Check: resource.ComposeTestCheckFunc(
+							checkIfTemplateExistsInVSphere(true, false, inventoryPath("terraform-test-coreos-vm")),
+						),
+					},
+				},
+			})
+		})
+	})
 })
 
 func basicVSphereOVFTemplateResourceConfig() string {
@@ -102,5 +122,90 @@ resource "vsphereovf_template" "terraform-test-ova" {
 		os.Getenv("VSPHERE_RESOURCE_POOL"),
 		os.Getenv("VSPHERE_DATASTORE"),
 		os.Getenv("VSPHERE_NETWORK"),
+	)
+}
+
+// partially copied from pivotal-cf/terraforming-vsphere,
+// partially from the Terraform vsphere/r/virtual_machine docs
+func readTemplateResourceConfig() string {
+	template := `
+data "vsphere_datacenter" "dc" {
+  name = "%s"
+}
+
+data "vsphere_resource_pool" "pool" {
+  name          = "%s"
+  datacenter_id = "${data.vsphere_datacenter.dc.id}"
+}
+
+data "vsphere_datastore" "ds" {
+  name          = "%s"
+  datacenter_id = "${data.vsphere_datacenter.dc.id}"
+}
+
+data "vsphere_network" "network" {
+  name          = "%s"
+  datacenter_id = "${data.vsphere_datacenter.dc.id}"
+}
+
+resource "vsphereovf_template" "terraform-test-ova" {
+	path = "%s"
+	folder = "%s"
+	datacenter = "${data.vsphere_datacenter.dc.name}"
+	resource_pool = "${data.vsphere_resource_pool.pool.name}"
+	datastore = "${data.vsphere_datastore.ds.name}"
+	template = true
+	network_mappings {
+		"VM Network" = "${data.vsphere_network.network.name}"
+	}
+}
+
+data "vsphere_virtual_machine" "template" {
+  name = "${vsphereovf_template.terraform-test-ova.name}"
+	datacenter_id = "${data.vsphere_datacenter.dc.id}"
+}
+
+resource "vsphere_virtual_machine" "vm" {
+  name = "terraform-test-coreos-vm"
+  resource_pool_id = "${data.vsphere_resource_pool.pool.id}"
+  datastore_id     = "${data.vsphere_datastore.ds.id}"
+
+	num_cpus = 2
+	memory = 1024
+	 guest_id = "${data.vsphere_virtual_machine.template.guest_id}"
+
+  scsi_type = "${data.vsphere_virtual_machine.template.scsi_type}"
+
+  network_interface {
+    network_id   = "${data.vsphere_network.network.id}"
+    adapter_type = "${data.vsphere_virtual_machine.template.network_interface_types[0]}"
+  }
+
+  disk {
+    name             = "disk0.vmdk"
+    size             = "${data.vsphere_virtual_machine.template.disks.0.size}"
+    eagerly_scrub    = "${data.vsphere_virtual_machine.template.disks.0.eagerly_scrub}"
+    thin_provisioned = "${data.vsphere_virtual_machine.template.disks.0.thin_provisioned}"
+  }
+
+  clone {
+    template_uuid = "${data.vsphere_virtual_machine.template.id}"
+  }
+
+  vapp {
+    properties {
+      "guestinfo.hostname"                        = "terraform-test.foobar.local"
+      "guestinfo.interface.0.name"                = "ens192"
+    }
+  }
+}
+`
+	return fmt.Sprintf(template,
+		os.Getenv("VSPHERE_DATACENTER"),
+		os.Getenv("VSPHERE_RESOURCE_POOL"),
+		os.Getenv("VSPHERE_DATASTORE"),
+		os.Getenv("VSPHERE_NETWORK"),
+		os.Getenv("VSPHERE_OVA_PATH"),
+		os.Getenv("VSPHERE_FOLDER"),
 	)
 }
