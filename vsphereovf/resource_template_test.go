@@ -160,11 +160,6 @@ resource "vsphereovf_template" "terraform-test-ova" {
 	}
 }
 
-data "vsphere_virtual_machine" "template" {
-  name = "${vsphereovf_template.terraform-test-ova.name}"
-	datacenter_id = "${data.vsphere_datacenter.dc.id}"
-}
-
 resource "vsphere_virtual_machine" "vm" {
   name = "terraform-test-coreos-vm"
   resource_pool_id = "${data.vsphere_resource_pool.pool.id}"
@@ -172,24 +167,21 @@ resource "vsphere_virtual_machine" "vm" {
 
 	num_cpus = 2
 	memory = 1024
-	 guest_id = "${data.vsphere_virtual_machine.template.guest_id}"
+	guest_id = "other26xLinux64Guest"
 
-  scsi_type = "${data.vsphere_virtual_machine.template.scsi_type}"
+  scsi_type = "pvscsi"
 
   network_interface {
     network_id   = "${data.vsphere_network.network.id}"
-    adapter_type = "${data.vsphere_virtual_machine.template.network_interface_types[0]}"
   }
 
   disk {
     name             = "disk0.vmdk"
-    size             = "${data.vsphere_virtual_machine.template.disks.0.size}"
-    eagerly_scrub    = "${data.vsphere_virtual_machine.template.disks.0.eagerly_scrub}"
-    thin_provisioned = "${data.vsphere_virtual_machine.template.disks.0.thin_provisioned}"
+    size             = "10"
   }
 
   clone {
-    template_uuid = "${data.vsphere_virtual_machine.template.id}"
+    template_uuid = "${vsphereovf_template.terraform-test-ova.uuid}"
   }
 
   vapp {
