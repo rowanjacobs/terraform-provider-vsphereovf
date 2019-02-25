@@ -58,6 +58,10 @@ func TemplateResource() *schema.Resource {
 				Optional: true,
 				Default:  true,
 			},
+			"uuid": &schema.Schema{
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -136,6 +140,10 @@ func CreateTemplate(d *schema.ResourceData, m interface{}) error {
 	props, err := search.VMProperties(client, dcPath, inventoryPath)
 	if err != nil {
 		return err
+	}
+
+	if props.Config.Uuid == "" {
+		return fmt.Errorf("no UUID given on template creation")
 	}
 
 	d.Set("uuid", props.Config.Uuid)
