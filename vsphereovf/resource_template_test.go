@@ -178,6 +178,7 @@ resource "vsphere_virtual_machine" "vm" {
   disk {
     name             = "disk0.vmdk"
     size             = "10"
+		thin_provisioned = "false"
   }
 
   clone {
