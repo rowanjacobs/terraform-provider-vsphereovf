@@ -52,7 +52,7 @@ var _ = Describe("OVF Template resource", func() {
 		})
 	})
 
-	// TODO: (this fails and I never could quite figure out why)
+	// TODO: this fails because the OVA resource is not being interacted with at the CustomizeDiff stage, and so returns an empty UUID.
 	Context("when another Terraform provider is being used", func() {
 		It("can read a vSphere template created by this provider", func() {
 			t := ginkgoTestWrapper()
@@ -171,6 +171,8 @@ resource "vsphere_virtual_machine" "vm" {
 
   scsi_type = "pvscsi"
 
+	wait_for_guest_net_routable = "false"
+
   network_interface {
     network_id   = "${data.vsphere_network.network.id}"
   }
@@ -183,12 +185,22 @@ resource "vsphere_virtual_machine" "vm" {
 
   clone {
     template_uuid = "${vsphereovf_template.terraform-test-ova.uuid}"
+
+		customize {
+			network_interface {
+			  ipv4_address = "%s"
+			}
+		}
   }
 
   vapp {
     properties {
       "guestinfo.hostname"                        = "terraform-test.foobar.local"
       "guestinfo.interface.0.name"                = "ens192"
+			"guestinfo.interface.0.ip.0.address"        = "%s"
+			"guestinfo.interface.0.route.0.gateway"     = "%s"
+			"guestinfo.interface.0.route.0.destination" = "0.0.0.0/0"
+			"guestinfo.dns.server.0"                    = "%s"
     }
   }
 }
@@ -200,5 +212,9 @@ resource "vsphere_virtual_machine" "vm" {
 		os.Getenv("VSPHERE_NETWORK"),
 		os.Getenv("VSPHERE_OVA_PATH"),
 		os.Getenv("VSPHERE_FOLDER"),
+		os.Getenv("VSPHERE_VM_IP_ADDRESS"),
+		os.Getenv("VSPHERE_VM_IP_ADDRESS"),
+		os.Getenv("VSPHERE_VM_GATEWAY"),
+		os.Getenv("VSPHERE_VM_DNS"),
 	)
 }
